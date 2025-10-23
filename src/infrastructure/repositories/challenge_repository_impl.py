@@ -1,8 +1,8 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
 from ...domain.entities.challenge import Challenge
-from ...domain.repositories.challenge_repository import ChallengeRepository
-from ..persistence.models import ChallengeModel
+from ...domain.repositories.challenge_repository import ChallengeRepository, TestCase
+from ..persistence.models import ChallengeModel, TestCaseModel
 from datetime import datetime
 
 
@@ -75,7 +75,7 @@ class ChallengeRepositoryImpl(ChallengeRepository):
         challenge_models = query.all()
         
         for model in challenge_models:
-            print(f"🔍 REPO DEBUG - Model: id={model.id}, status='{model.status}'")
+            print(f"REPO DEBUG - Model: id={model.id}, status='{model.status}'")
         
         return [self._to_domain(challenge_model) for challenge_model in challenge_models]
 
@@ -110,3 +110,24 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             created_at=challenge.created_at,
             updated_at=challenge.updated_at
         )
+    
+    async def get_test_cases(self, challenge_id: str) -> List[TestCase]:
+        """Get all test cases for a challenge ordered by order_index"""
+        test_case_models = (
+            self.db.query(TestCaseModel)
+            .filter(TestCaseModel.challenge_id == challenge_id)
+            .order_by(TestCaseModel.order_index)
+            .all()
+        )
+        
+        return [
+            TestCase(
+                id=str(tc.id),
+                challenge_id=str(tc.challenge_id),
+                input=tc.input,
+                expected_output=tc.expected_output,
+                is_hidden=tc.is_hidden,
+                order_index=tc.order_index
+            )
+            for tc in test_case_models
+        ]
