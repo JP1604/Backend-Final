@@ -45,10 +45,10 @@ src/
 docker-compose up -d
 
 # 2. Probar que funciona
-python test_api.py
+python test_simple.py
 
 # 3. Ver la API en el navegador
-# Abrir: http://localhost:8000/docs
+# Abrir: http://localhost:8008/docs
 ```
 
 ### Opción 2: Desarrollo local
