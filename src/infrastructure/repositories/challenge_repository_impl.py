@@ -43,19 +43,40 @@ class ChallengeRepositoryImpl(ChallengeRepository):
         self.db.commit()
 
     async def find_all(self, filters: dict = None) -> List[Challenge]:
+        from ...domain.entities.challenge import ChallengeStatus, ChallengeDifficulty
+        
         query = self.db.query(ChallengeModel)
+        
+        
         
         if filters:
             if "course_id" in filters:
                 query = query.filter(ChallengeModel.course_id == filters["course_id"])
             if "status" in filters:
-                query = query.filter(ChallengeModel.status == filters["status"])
+                # Convertir string a enum si es necesario
+                status_value = filters["status"]
+                if isinstance(status_value, str):
+                    try:
+                        status_value = ChallengeStatus(status_value)
+                    except ValueError:
+                        pass  # Si no es un valor válido, dejarlo como string
+                query = query.filter(ChallengeModel.status == status_value)
             if "difficulty" in filters:
-                query = query.filter(ChallengeModel.difficulty == filters["difficulty"])
+                difficulty_value = filters["difficulty"]
+                if isinstance(difficulty_value, str):
+                    try:
+                        difficulty_value = ChallengeDifficulty(difficulty_value)
+                    except ValueError:
+                        pass
+                query = query.filter(ChallengeModel.difficulty == difficulty_value)
             if "created_by" in filters:
                 query = query.filter(ChallengeModel.created_by == filters["created_by"])
 
         challenge_models = query.all()
+        
+        for model in challenge_models:
+            print(f"🔍 REPO DEBUG - Model: id={model.id}, status='{model.status}'")
+        
         return [self._to_domain(challenge_model) for challenge_model in challenge_models]
 
     def _to_domain(self, challenge_model: ChallengeModel) -> Challenge:

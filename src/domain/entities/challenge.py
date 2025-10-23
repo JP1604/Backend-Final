@@ -53,8 +53,19 @@ class Challenge:
     def is_archived(self) -> bool:
         return self.status == ChallengeStatus.ARCHIVED
 
-    def can_be_viewed_by(self, user_role: str) -> bool:
-        return self.is_published() or user_role in ["ADMIN", "PROFESSOR"]
+    def can_be_viewed_by(self, user_role) -> bool:
+        """
+        Determina si un challenge puede ser visto por un usuario según su rol.
+        Acepta tanto strings como UserRole enums.
+        """
+        # Convertir a string si es un enum
+        role_str = str(user_role.value) if hasattr(user_role, 'value') else str(user_role)
+        return self.is_published() or role_str in ["ADMIN", "PROFESSOR"]
 
-    def can_be_edited_by(self, user_id: str, user_role: str) -> bool:
-        return (self.created_by == user_id) or user_role == "ADMIN"
+    def can_be_edited_by(self, user_id: str, user_role) -> bool:
+        """
+        Determina si un challenge puede ser editado por un usuario.
+        Acepta tanto strings como UserRole enums.
+        """
+        role_str = str(user_role.value) if hasattr(user_role, 'value') else str(user_role)
+        return (self.created_by == user_id) or role_str == "ADMIN"

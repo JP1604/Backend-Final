@@ -1,20 +1,31 @@
+"""
+Punto de entrada principal de la aplicación.
+Configura FastAPI, middleware y rutas.
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .presentation.controllers import auth_controller, challenges_controller, submissions_controller
+
+from .presentation.controllers import (
+    auth_controller, 
+    challenges_controller, 
+    submissions_controller
+)
 from .infrastructure.persistence.database import engine
 from .infrastructure.persistence.models import Base
 
-# Create database tables
+# Crear tablas de base de datos si no existen
 Base.metadata.create_all(bind=engine)
 
-# Create FastAPI app
+# Crear aplicación FastAPI
 app = FastAPI(
     title="Online Judge API",
-    description="Backend para plataforma de evaluación de algoritmos",
-    version="1.0.0"
+    description="Backend para plataforma de evaluación de algoritmos - Sistema tipo HackerRank",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
-# Add CORS middleware
+# Configurar CORS para permitir peticiones desde el frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Frontend URL
@@ -23,22 +34,36 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Registrar routers de controladores
 app.include_router(auth_controller.router)
 app.include_router(challenges_controller.router)
 app.include_router(submissions_controller.router)
 
 
-@app.get("/")
+@app.get("/", tags=["root"])
 async def root():
-    return {"message": "Online Judge API - Semana 2"}
+    """Endpoint raíz - información básica de la API."""
+    return {
+        "message": "Online Judge API - Semana 2",
+        "version": "1.0.0",
+        "docs": "/docs"
+    }
 
 
-@app.get("/health")
+@app.get("/health", tags=["health"])
 async def health_check():
-    return {"status": "healthy"}
+    """Health check endpoint para monitoreo."""
+    return {
+        "status": "healthy",
+        "service": "online-judge-api"
+    }
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=8000,
+        log_level="info"
+    )

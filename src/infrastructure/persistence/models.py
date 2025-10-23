@@ -26,11 +26,11 @@ class ChallengeModel(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
-    difficulty = Column(SQLEnum(ChallengeDifficulty), nullable=False)
+    difficulty = Column(String(20), nullable=False)  # VARCHAR en BD, no ENUM
     tags = Column(ARRAY(String), nullable=False)
     time_limit = Column(Integer, nullable=False)
     memory_limit = Column(Integer, nullable=False)
-    status = Column(SQLEnum(ChallengeStatus), nullable=False, default=ChallengeStatus.DRAFT)
+    status = Column(String(20), nullable=False, default='draft')  # VARCHAR en BD, no ENUM
     created_by = Column(UUID(as_uuid=True), nullable=False, index=True)
     course_id = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -31,10 +31,21 @@ class GetChallengesUseCase:
         if difficulty:
             filters["difficulty"] = difficulty
 
+       
+       
+        
         challenges = await self.challenge_repository.find_all(filters)
+        
+        
+        for i, challenge in enumerate(challenges):
+            can_view = challenge.can_be_viewed_by(user_role)
+            
 
         # Filtrar challenges que el usuario puede ver
-        return [
+        filtered = [
             challenge for challenge in challenges
             if challenge.can_be_viewed_by(user_role)
         ]
+        
+        
+        return filtered
