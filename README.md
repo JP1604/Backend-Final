@@ -44,25 +44,13 @@ src/
 # 1. Levantar todos los servicios
 docker-compose up -d
 
-# 2. Probar que funciona
-python test_simple.py
+
 
 # 3. Ver la API en el navegador
 # Abrir: http://localhost:8008/docs
-```
 
-### Opción 2: Desarrollo local
 
-```bash
-# 1. Instalar dependencias
-pip install -r requirements.txt
 
-# 2. Levantar solo base de datos y Redis
-docker-compose up -d postgres redis
-
-# 3. Ejecutar la aplicación
-uvicorn src.main:app --reload
-```
 
 ## 📋 Endpoints principales
 
@@ -92,31 +80,4 @@ Se crean automáticamente estos usuarios:
 4. **Worker** procesa el código (simula ejecución)
 5. **Sistema** devuelve el resultado (ACCEPTED, WRONG_ANSWER, etc.)
 
-## 🔧 Comandos útiles
 
-```bash
-# Ver logs de todos los servicios
-docker-compose logs -f
-
-# Ver logs solo de la API
-docker-compose logs -f api
-
-# Detener todo
-docker-compose down
-
-# Reiniciar un servicio
-docker-compose restart api
-```
-
-## 📊 Estado del proyecto
-
-✅ **COMPLETADO para Semana 2:**
-- Autenticación con JWT
-- CRUD básico de challenges
-- Sistema de submissions
-- Workers que procesan código
-- Docker Compose funcionando
-
-## 🎉 ¡Listo para usar!
-
-El proyecto está simplificado y listo para la entrega de la Semana 2. Es fácil de entender y tiene solo lo necesario para funcionar.
