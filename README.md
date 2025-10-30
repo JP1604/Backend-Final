@@ -1,14 +1,14 @@
-# 🎯 Online Judge - Semana 2 (SIMPLIFICADO)
+#  Online Judge - Semana 2 (SIMPLIFICADO)
 
 Una plataforma simple para evaluar algoritmos, como HackerRank pero más fácil de entender.
 
-## 🚀 ¿Qué hace esta plataforma?
+##  ¿Qué hace esta plataforma?
 
 1. **Profesores** pueden crear problemas de programación
 2. **Estudiantes** pueden resolver los problemas enviando código
 3. **El sistema** evalúa automáticamente el código y da un resultado
 
-## 📁 Estructura SIMPLE del proyecto
+##  Estructura SIMPLE del proyecto
 
 ```
 src/
@@ -28,7 +28,7 @@ src/
 └── workers/            # Procesadores de código
 ```
 
-## 🛠️ Tecnologías usadas
+##  Tecnologías usadas
 
 - **FastAPI**: Framework para crear la API
 - **PostgreSQL**: Base de datos
@@ -36,7 +36,7 @@ src/
 - **Celery**: Procesador de tareas
 - **Docker**: Para ejecutar todo junto
 
-## 🚀 Cómo ejecutar
+##  Cómo ejecutar
 
 ### Opción 1: Con Docker (RECOMENDADO)
 
@@ -52,19 +52,19 @@ docker-compose up -d
 
 
 
-## 📋 Endpoints principales
+##  Endpoints principales
 
-### 🔐 Autenticación
+###  Autenticación
 - `POST /auth/login` - Iniciar sesión
 
-### 📝 Challenges (Problemas)
+###  Challenges (Problemas)
 - `GET /challenges/` - Ver todos los problemas
 - `POST /challenges/` - Crear un problema (solo profesores)
 
-### 💻 Submissions (Envíos)
+###  Submissions (Envíos)
 - `POST /submissions/` - Enviar solución a un problema
 
-## 👥 Usuarios de prueba
+##  Usuarios de prueba
 
 Se crean automáticamente estos usuarios:
 
@@ -72,12 +72,13 @@ Se crean automáticamente estos usuarios:
 - **Profesor**: professor@example.com / password  
 - **Estudiante**: student@example.com / password
 
-## 🎯 ¿Cómo funciona?
+##  ¿Cómo funciona?
 
 1. **Profesor** crea un challenge (problema)
 2. **Estudiante** se loguea y ve los challenges
 3. **Estudiante** envía su código como solución
 4. **Worker** procesa el código (simula ejecución)
 5. **Sistema** devuelve el resultado (ACCEPTED, WRONG_ANSWER, etc.)
+
 
 
