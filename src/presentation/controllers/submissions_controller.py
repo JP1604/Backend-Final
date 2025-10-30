@@ -13,7 +13,7 @@ from ...application.dtos.submission_dto import (
 from ...application.use_cases.submissions.submit_solution_use_case import SubmitSolutionUseCase
 from ...infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
 from ...infrastructure.repositories.submission_repository_impl import SubmissionRepositoryImpl
-from ...infrastructure.services.job_queue_service import JobQueueService
+from ...infrastructure.services.queue_adapter import QueueAdapter
 from ...infrastructure.persistence.database import get_db
 from ...domain.entities.user import UserRole
 from ..middleware.auth_middleware import get_current_user
@@ -29,12 +29,12 @@ def _build_use_case(db: Session) -> SubmitSolutionUseCase:
     """Factory para crear el caso de uso con sus dependencias."""
     challenge_repository = ChallengeRepositoryImpl(db)
     submission_repository = SubmissionRepositoryImpl(db)
-    job_queue_service = JobQueueService()
+    queue_adapter = QueueAdapter()
     
     return SubmitSolutionUseCase(
         challenge_repository, 
         submission_repository, 
-        job_queue_service
+        queue_adapter
     )
 
 
