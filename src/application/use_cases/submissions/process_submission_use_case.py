@@ -6,10 +6,10 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from ...domain.repositories.submission_repository import SubmissionRepository
-from ...domain.repositories.challenge_repository import ChallengeRepository
-from ...domain.entities.submission import SubmissionStatus, TestCaseResult
-from ...application.dtos.execution_dto import (
+from ....domain.repositories.submission_repository import SubmissionRepository
+from ....domain.repositories.challenge_repository import ChallengeRepository
+from ....domain.entities.submission import SubmissionStatus, TestCaseResult
+from ...dtos.execution_dto import (
     SubmissionJobDTO,
     ExecutionResultDTO,
     TestCaseResultDTO

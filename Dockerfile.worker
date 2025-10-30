@@ -15,5 +15,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
-# Start the worker
-CMD ["celery", "-A", "src.workers.celery_app", "worker", "--loglevel=info"]
+# Set PYTHONPATH to include the project root
+ENV PYTHONPATH=/app
+
+# Start the worker manager (runs all language workers)
+CMD ["python", "-m", "src.workers.worker_manager", "--languages", "all", "--monitor"]
