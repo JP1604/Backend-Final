@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from ...domain.entities.user import User, UserRole
-from ...domain.repositories.user_repository import UserRepository
+from domain.entities.user import User, UserRole
+from domain.repositories.user_repository import UserRepository
 from ..persistence.models import UserModel
 from datetime import datetime
 

@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from ...infrastructure.services.jwt_service import JWTService
+from infrastructure.services.jwt_service import JWTService
 
 security = HTTPBearer()
 

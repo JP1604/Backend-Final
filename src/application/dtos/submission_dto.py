@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from ...domain.entities.submission import ProgrammingLanguage, SubmissionStatus
+from domain.entities.submission import ProgrammingLanguage, SubmissionStatus
 
 
 class TestCaseResultResponse(BaseModel):

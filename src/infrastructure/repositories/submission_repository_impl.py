@@ -1,8 +1,8 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from ...domain.entities.submission import Submission, TestCaseResult
-from ...domain.repositories.submission_repository import SubmissionRepository
-from ..persistence.models import SubmissionModel
+from domain.entities.submission import Submission, TestCaseResult
+from domain.repositories.submission_repository import SubmissionRepository
+from infrastructure.persistence.models import SubmissionModel
 from datetime import datetime
 
 

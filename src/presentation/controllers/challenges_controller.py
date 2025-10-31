@@ -6,16 +6,16 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from ...application.dtos.challenge_dto import (
+from application.dtos.challenge_dto import (
     CreateChallengeRequest, 
     ChallengeResponse
 )
-from ...application.use_cases.challenges.create_challenge_use_case import CreateChallengeUseCase
-from ...application.use_cases.challenges.get_challenges_use_case import GetChallengesUseCase
-from ...infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
-from ...infrastructure.persistence.database import get_db
-from ...domain.entities.user import UserRole
-from ..middleware.auth_middleware import get_current_user
+from application.use_cases.challenges.create_challenge_use_case import CreateChallengeUseCase
+from application.use_cases.challenges.get_challenges_use_case import GetChallengesUseCase
+from infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
+from infrastructure.persistence.database import get_db
+from domain.entities.user import UserRole
+from presentation.middleware.auth_middleware import get_current_user
 
 router = APIRouter(
     prefix="/challenges", 

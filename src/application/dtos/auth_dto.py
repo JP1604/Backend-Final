@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from ...domain.entities.user import UserRole
+from domain.entities.user import UserRole
 
 
 class LoginRequest(BaseModel):
