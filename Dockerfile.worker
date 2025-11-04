@@ -16,7 +16,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set PYTHONPATH to include the project root
-ENV PYTHONPATH=/app/src
+ENV PYTHONPATH=/app
 
 # Start the worker manager (runs all language workers)
-CMD ["python", "-m", "workers.worker_manager", "--languages", "all", "--monitor"]
+CMD ["python", "-m", "src.workers.worker_manager", "--languages", "all", "--monitor"]

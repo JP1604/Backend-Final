@@ -1,8 +1,8 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from domain.entities.challenge import Challenge
-from domain.repositories.challenge_repository import ChallengeRepository, TestCase
-from infrastructure.persistence.models import ChallengeModel, TestCaseModel
+from ...domain.entities.challenge import Challenge
+from ...domain.repositories.challenge_repository import ChallengeRepository, TestCase
+from ..persistence.models import ChallengeModel, TestCaseModel
 from datetime import datetime
 
 

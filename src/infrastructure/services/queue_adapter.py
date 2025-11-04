@@ -6,7 +6,7 @@ import logging
 from typing import Optional
 from dataclasses import asdict
 
-from application.dtos.execution_dto import (
+from ...application.dtos.execution_dto import (
     SubmissionJobDTO,
     ExecutionResultDTO,
     TestCaseDTO
