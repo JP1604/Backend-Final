@@ -1,9 +1,9 @@
 import uuid
 from datetime import datetime
 from typing import Dict, Any, List
-from ....domain.entities.challenge import Challenge, ChallengeDifficulty, ChallengeStatus
-from ....domain.entities.user import UserRole
-from ....domain.repositories.challenge_repository import ChallengeRepository
+from domain.entities.challenge import Challenge, ChallengeDifficulty, ChallengeStatus
+from domain.entities.user import UserRole
+from domain.repositories.challenge_repository import ChallengeRepository
 
 
 class CreateChallengeUseCase:

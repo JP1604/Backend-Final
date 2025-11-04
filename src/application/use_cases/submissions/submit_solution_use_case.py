@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
 from typing import Dict, Any
-from ....domain.entities.submission import Submission, SubmissionStatus, ProgrammingLanguage
-from ....domain.entities.user import UserRole
-from ....domain.repositories.challenge_repository import ChallengeRepository
-from ....domain.repositories.submission_repository import SubmissionRepository
+from domain.entities.submission import Submission, SubmissionStatus, ProgrammingLanguage
+from domain.entities.user import UserRole
+from domain.repositories.challenge_repository import ChallengeRepository
+from domain.repositories.submission_repository import SubmissionRepository
 
 
 class SubmitSolutionUseCase:

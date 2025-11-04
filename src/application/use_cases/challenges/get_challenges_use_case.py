@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
-from ....domain.entities.challenge import Challenge
-from ....domain.entities.user import UserRole
-from ....domain.repositories.challenge_repository import ChallengeRepository
+from domain.entities.challenge import Challenge
+from domain.entities.user import UserRole
+from domain.repositories.challenge_repository import ChallengeRepository
 
 
 class GetChallengesUseCase:

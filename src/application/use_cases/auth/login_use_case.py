@@ -1,6 +1,6 @@
 from typing import Dict, Any
-from ....domain.entities.user import User
-from ....domain.repositories.user_repository import UserRepository
+from domain.entities.user import User
+from domain.repositories.user_repository import UserRepository
 
 
 class LoginUseCase:

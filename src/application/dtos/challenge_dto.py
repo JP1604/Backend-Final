@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from uuid import UUID
-from ...domain.entities.challenge import ChallengeDifficulty
+from domain.entities.challenge import ChallengeDifficulty
 
 
 class CreateChallengeRequest(BaseModel):

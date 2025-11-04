@@ -5,13 +5,13 @@ Configura FastAPI, middleware y rutas.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .presentation.controllers import (
+from presentation.controllers import (
     auth_controller, 
     challenges_controller, 
     submissions_controller
 )
-from .infrastructure.persistence.database import engine
-from .infrastructure.persistence.models import Base
+from infrastructure.persistence.database import engine
+from infrastructure.persistence.models import Base
 
 # Crear tablas de base de datos si no existen
 Base.metadata.create_all(bind=engine)

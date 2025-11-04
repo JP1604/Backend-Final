@@ -44,8 +44,7 @@ services:
     depends_on:
       - postgres
       - redis
-    volumes:
-      - .:/app
+    restart: unless-stopped
     networks:
       - online-judge-network
 
