@@ -9,7 +9,7 @@ import sys
 from typing import List, Dict
 from multiprocessing import Process
 
-from .code_execution_worker import CodeExecutionWorker
+from workers.code_execution_worker import CodeExecutionWorker
 
 # Configure logging
 logging.basicConfig(

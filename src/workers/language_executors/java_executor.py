@@ -28,12 +28,7 @@ class JavaExecutor(BaseExecutor):
         """
         Execute Java code against test cases (STUB VERSION)
         
-        TODO: Replace with proper Docker container execution:
-        - Use openjdk Docker image
-        - Compile Java code (javac)
-        - Run with JVM memory limits
-        - Handle compilation errors
-        - Execute with timeout
+        TODO: Replace with proper Docker container execution
         """
         logger.info(f"Executing Java code with {len(test_cases)} test cases")
         

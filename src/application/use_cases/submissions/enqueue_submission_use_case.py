@@ -5,8 +5,8 @@ import logging
 from datetime import datetime
 from typing import List
 
-from ....domain.repositories.challenge_repository import ChallengeRepository
-from ...dtos.execution_dto import (
+from domain.repositories.challenge_repository import ChallengeRepository
+from application.dtos.execution_dto import (
     EnqueueSubmissionDTO,
     SubmissionJobDTO,
     TestCaseDTO

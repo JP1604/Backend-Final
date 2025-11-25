@@ -28,12 +28,7 @@ class CppExecutor(BaseExecutor):
         """
         Execute C++ code against test cases (STUB VERSION)
         
-        TODO: Replace with proper Docker container execution:
-        - Use gcc/g++ Docker image
-        - Compile with g++ (with flags: -std=c++17 -O2)
-        - Handle compilation errors
-        - Execute compiled binary with resource limits
-        - Monitor for segfaults and memory issues
+        TODO: Replace with proper Docker container execution
         """
         logger.info(f"Executing C++ code with {len(test_cases)} test cases")
         

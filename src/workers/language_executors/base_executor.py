@@ -115,7 +115,7 @@ class BaseExecutor(ABC):
     
     async def validate_code(self, code: str) -> tuple[bool, str]:
         """
-        Validate code before execution (can be overridden by subclasses)
+        Validate code before execution 
         
         Returns:
             Tuple of (is_valid, error_message)

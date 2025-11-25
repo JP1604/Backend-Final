@@ -29,11 +29,6 @@ class NodeJSExecutor(BaseExecutor):
         Execute NodeJS code against test cases (STUB VERSION)
         
         TODO: Replace with proper Docker container execution:
-        - Use node:alpine Docker image
-        - Install any required npm packages
-        - Execute with V8 memory limits
-        - Handle async/promise-based code
-        - Capture console output
         """
         logger.info(f"Executing NodeJS code with {len(test_cases)} test cases")
         

@@ -13,13 +13,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY . .
+COPY src ./src
+
+# Set PYTHONPATH to /app/src so absolute imports work
+ENV PYTHONPATH=/app/src
 
 # Set working directory to src
 WORKDIR /app/src
-
-# Set PYTHONPATH
-ENV PYTHONPATH=/app/src
 
 # Expose port
 EXPOSE 8000

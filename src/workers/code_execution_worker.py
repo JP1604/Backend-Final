@@ -10,23 +10,23 @@ from typing import Optional
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine
 
-from .redis_queue_service import RedisQueueService
-from .language_executors import (
+from workers.redis_queue_service import RedisQueueService
+from workers.language_executors import (
     PythonExecutor,
     JavaExecutor,
     NodeJSExecutor,
     CppExecutor
 )
-from ..infrastructure.repositories.submission_repository_impl import SubmissionRepositoryImpl
-from ..infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
-from ..application.use_cases.submissions.process_submission_use_case import ProcessSubmissionUseCase
-from ..application.dtos.execution_dto import (
+from infrastructure.repositories.submission_repository_impl import SubmissionRepositoryImpl
+from infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
+from application.use_cases.submissions.process_submission_use_case import ProcessSubmissionUseCase
+from application.dtos.execution_dto import (
     SubmissionJobDTO,
     TestCaseDTO,
     ExecutionResultDTO,
     TestCaseResultDTO
 )
-from ..infrastructure.services.queue_adapter import QueueAdapter
+from infrastructure.services.queue_adapter import QueueAdapter
 
 # Configure logging
 logging.basicConfig(
@@ -220,7 +220,7 @@ class CodeExecutionWorker:
                     submission_repo = SubmissionRepositoryImpl(db)
                     submission = await submission_repo.find_by_id(job.submission_id)
                     if submission:
-                        from ..domain.entities.submission import SubmissionStatus
+                        from domain.entities.submission import SubmissionStatus
                         submission.status = SubmissionStatus.RUNTIME_ERROR
                         submission.score = 0
                         submission.cases = []

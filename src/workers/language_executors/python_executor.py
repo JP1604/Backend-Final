@@ -30,11 +30,6 @@ class PythonExecutor(BaseExecutor):
         Execute Python code against test cases (STUB VERSION)
         
         TODO: Replace with proper Docker container execution:
-        - Spin up isolated Docker container
-        - Copy code and test cases
-        - Execute with resource limits
-        - Capture output and metrics
-        - Clean up container
         """
         logger.info(f"Executing Python code with {len(test_cases)} test cases")
         

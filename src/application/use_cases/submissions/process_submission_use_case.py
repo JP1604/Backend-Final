@@ -6,10 +6,10 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from ....domain.repositories.submission_repository import SubmissionRepository
-from ....domain.repositories.challenge_repository import ChallengeRepository
-from ....domain.entities.submission import SubmissionStatus, TestCaseResult
-from ...dtos.execution_dto import (
+from domain.repositories.submission_repository import SubmissionRepository
+from domain.repositories.challenge_repository import ChallengeRepository
+from domain.entities.submission import SubmissionStatus, TestCaseResult
+from application.dtos.execution_dto import (
     SubmissionJobDTO,
     ExecutionResultDTO,
     TestCaseResultDTO
@@ -154,6 +154,49 @@ class ProcessSubmissionUseCase:
                 f"Submission {result.submission_id} completed: "
                 f"status={result.status}, score={result.score}"
             )
+
+            # Trigger asynchronous leaderboard recalculation for the challenge
+            try:
+                import asyncio
+                # Lazy import to avoid circular deps in domain interfaces
+                from infrastructure.repositories.user_repository_impl import UserRepositoryImpl
+                from application.use_cases.leaderboards.recalculate_challenge_leaderboard_use_case import (
+                    RecalculateChallengeLeaderboardUseCase,
+                )
+                from sqlalchemy import select
+                from infrastructure.persistence.models import course_challenges
+                from application.use_cases.leaderboards.recalculate_course_leaderboard_use_case import (
+                    RecalculateCourseLeaderboardUseCase,
+                )
+                from infrastructure.repositories.course_repository_impl import CourseRepositoryImpl
+
+                db = getattr(self.submission_repository, 'db', None)
+                if db:
+                    user_repo = UserRepositoryImpl(db)
+                    recalc_uc = RecalculateChallengeLeaderboardUseCase(self.submission_repository, user_repo)
+                    # Schedule background task - do not await (non-blocking)
+                    asyncio.create_task(recalc_uc.execute(submission.challenge_id))
+                    logger.info(f"Scheduled leaderboard recalculation for challenge {submission.challenge_id}")
+
+                    # Also schedule course leaderboard recalculation for any course that includes this challenge
+                    try:
+                        rows = db.execute(
+                            select(course_challenges.c.course_id).where(
+                                course_challenges.c.challenge_id == submission.challenge_id
+                            )
+                        ).fetchall()
+                        course_ids = [str(r[0]) for r in rows]
+                        if course_ids:
+                            course_repo = CourseRepositoryImpl(db)
+                            recalc_course_uc = RecalculateCourseLeaderboardUseCase(self.submission_repository, user_repo, course_repo)
+                            for cid in course_ids:
+                                asyncio.create_task(recalc_course_uc.execute(cid))
+                                logger.info(f"Scheduled course leaderboard recalculation for course {cid}")
+                    except Exception:
+                        logger.debug("No course assignments found or failed to schedule course recalculation")
+
+            except Exception as e:
+                logger.warning(f"Failed to schedule leaderboard recalculation: {str(e)}")
             
             return True
             

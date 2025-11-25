@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from ..entities.submission import Submission
+from domain.entities.submission import Submission
 
 
 class SubmissionRepository(ABC):

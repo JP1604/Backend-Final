@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from ..entities.challenge import Challenge
+from domain.entities.challenge import Challenge
 
 
 class TestCase:

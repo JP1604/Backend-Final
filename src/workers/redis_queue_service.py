@@ -1,12 +1,11 @@
 """
 Redis Queue Service for handling code submission jobs
-Simple Redis-based queue without Celery complexity
 """
 import redis
 import json
 import os
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -226,4 +225,58 @@ class RedisQueueService:
         except Exception as e:
             logger.error(f"Redis health check failed: {str(e)}")
             return False
+    
+    async def peek_queue(self, language: str, start: int = 0, end: int = -1) -> List[Dict[str, Any]]:
+        """
+        Peek at submissions in a language queue without removing them
+        
+        Args:
+            language: Programming language queue to peek
+            start: Start index (0-based)
+            end: End index (-1 for all, or specific index)
+            
+        Returns:
+            List of submission job data dictionaries
+        """
+        try:
+            queue_name = self._get_queue_name(language)
+            # LRANGE returns items from start to end (inclusive)
+            # Note: Redis lists are right-to-left for RPOP, so index 0 is the oldest
+            items = self.redis_client.lrange(queue_name, start, end)
+            
+            submissions = []
+            for item in items:
+                try:
+                    job_data = json.loads(item)
+                    submissions.append(job_data)
+                except json.JSONDecodeError:
+                    logger.warning(f"Failed to parse queue item: {item}")
+                    continue
+            
+            logger.debug(f"Peeked {len(submissions)} items from {queue_name}")
+            return submissions
+            
+        except Exception as e:
+            logger.error(f"Failed to peek queue {language}: {str(e)}")
+            return []
+    
+    async def peek_all_queues(self, limit_per_queue: int = 10) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Peek at all language queues
+        
+        Args:
+            limit_per_queue: Maximum number of items to return per queue
+            
+        Returns:
+            Dictionary mapping language to list of submissions
+        """
+        languages = ["python", "java", "nodejs", "cpp"]
+        result = {}
+        
+        for lang in languages:
+            # Get up to limit_per_queue items (0 to limit-1)
+            submissions = await self.peek_queue(lang, 0, limit_per_queue - 1)
+            result[lang] = submissions
+        
+        return result
 

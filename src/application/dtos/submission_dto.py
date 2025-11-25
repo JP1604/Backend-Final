@@ -4,11 +4,14 @@ from domain.entities.submission import ProgrammingLanguage, SubmissionStatus
 
 
 class TestCaseResultResponse(BaseModel):
-    case_id: int
+    case_id: str  # UUID string
     status: SubmissionStatus
     time_ms: int
     memory_mb: Optional[int] = None
     error_message: Optional[str] = None
+    passed: Optional[bool] = None
+    actual_output: Optional[str] = None
+    expected_output: Optional[str] = None
 
 
 class SubmitSolutionRequest(BaseModel):
