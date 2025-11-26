@@ -139,12 +139,26 @@
   align-items: center;
   justify-content: center;
   color: white;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.user-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.user-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .user-email {
-  color: var(--text-primary);
-  font-weight: 500;
-  font-size: 0.875rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+  font-size: 0.8rem;
   max-width: 150px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -170,6 +184,27 @@
   background: var(--error);
   border-color: var(--error);
   color: white;
+}
+
+.btn-profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-full);
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  text-decoration: none;
+}
+
+.btn-profile:hover {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.05);
 }
 
 .btn-primary, .btn-secondary {

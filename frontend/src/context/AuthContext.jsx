@@ -33,34 +33,49 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      // MOCK: Simular login sin API
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwicm9sZSI6IlNUVURFTlQifQ.mock';
-      localStorage.setItem('token', mockToken);
-      setToken(mockToken);
+      // Llamar al endpoint real del backend
+      const response = await authAPI.login(email, password);
       
-      // Simular usuario
-      setUser({ id: '123', email: email, role: 'STUDENT' });
+      // axios devuelve la respuesta en response.data
+      const data = response.data || response;
+      
+      // Guardar el token en localStorage
+      localStorage.setItem('token', data.access_token);
+      setToken(data.access_token);
+      
+      // Guardar info del usuario
+      setUser({
+        id: data.user.id,
+        email: data.user.email,
+        role: data.user.role,
+        first_name: data.user.first_name,
+        last_name: data.user.last_name,
+      });
       
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
       return { 
         success: false, 
-        error: 'Login failed' 
+        error: error.response?.data?.detail || 'Login failed' 
       };
     }
   };
 
   const register = async (email, password, firstName, lastName) => {
     try {
-      // MOCK: Simular registro sin API
-      console.log('Mock register:', { email, firstName, lastName });
+      // Llamar al endpoint real del backend
+      const response = await authAPI.register(email, password, firstName, lastName);
+      
+      // axios devuelve la respuesta en response.data
+      // El registro es exitoso, pero no guardamos token
+      // El usuario debe loguearse después
       return { success: true };
     } catch (error) {
       console.error('Register error:', error);
       return { 
         success: false, 
-        error: 'Registration failed' 
+        error: error.response?.data?.detail || 'Registration failed' 
       };
     }
   };

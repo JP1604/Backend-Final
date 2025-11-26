@@ -55,9 +55,9 @@ def _build_delete_user_use_case(db: Session) -> DeleteUserUseCase:
     summary="Create a new user"
 )
 async def create_user(
-    user_request: CreateUserRequest,
+    user_data: CreateUserRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Create a new user in the system.
@@ -71,7 +71,7 @@ async def create_user(
     Requires authentication. Only ADMIN users can create new users.
     """
     # Verificar que el usuario actual es administrador
-    if not current_user.is_admin():
+    if current_user.get("role") != "ADMIN":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only administrators can create users"
@@ -108,15 +108,16 @@ async def create_user(
 )
 async def get_all_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get a list of all users in the system.
     
     Requires authentication. Only ADMIN and PROFESSOR users can view all users.
     """
-    # Verificar permisos
-    if not (current_user.is_admin() or current_user.is_professor()):
+    # Verificar permisos: current_user es un dict con "id", "email", "role"
+    user_role = current_user.get("role", "")
+    if user_role not in ["ADMIN", "PROFESSOR"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to view all users"
@@ -153,7 +154,7 @@ async def get_all_users(
 async def get_user_by_id(
     user_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
     Get a specific user by their ID.
@@ -163,7 +164,8 @@ async def get_user_by_id(
     Requires authentication. Users can view their own profile, or admins/professors can view any user.
     """
     # Los usuarios pueden ver su propio perfil, o admins/profesores pueden ver cualquiera
-    if user_id != current_user.id and not (current_user.is_admin() or current_user.is_professor()):
+    user_role = current_user.get("role", "")
+    if user_id != current_user.get("id") and user_role not in ["ADMIN", "PROFESSOR"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to view this user"
@@ -206,10 +208,10 @@ async def update_user(
     user_id: str,
     user_update: UpdateUserRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user)
 ):
     """
-    Update an existing user's information.
+    Update a user's information.
     
     - **user_id**: The ID of the user to update
     - **email**: New email (optional)
@@ -222,7 +224,7 @@ async def update_user(
     or admins can update any user. Cannot demote the last admin.
     """
     # Basic permission check: users can update themselves, admins can update anyone
-    if user_id != current_user.id and not current_user.is_admin():
+    if user_id != current_user.get("id") and current_user.get("role") != "ADMIN":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to update this user"
@@ -232,8 +234,8 @@ async def update_user(
         use_case = _build_update_user_use_case(db)
         result = await use_case.execute(
             user_id=user_id,
-            current_user_id=current_user.id,
-            current_user_role=current_user.role,
+            current_user_id=current_user.get("id"),
+            current_user_role=current_user.get("role"),
             email=user_update.email,
             password=user_update.password,
             first_name=user_update.first_name,
@@ -287,8 +289,8 @@ async def delete_user(
         use_case = _build_delete_user_use_case(db)
         await use_case.execute(
             user_id=user_id,
-            current_user_id=current_user.id,
-            current_user_role=current_user.role
+            current_user_id=current_user.get("id"),
+            current_user_role=current_user.get("role")
         )
         
         return {

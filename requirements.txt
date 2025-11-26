@@ -5,6 +5,8 @@ psycopg2-binary==2.9.9
 redis==5.0.1
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+# Explicitly pin bcrypt to a version compatible with passlib 1.7.4 (avoid bcrypt 5.x which changed package metadata).
+bcrypt==3.2.0
 python-multipart==0.0.6
 pydantic==2.5.0
 alembic==1.13.1

@@ -1,6 +1,25 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8008';
+// Determinar la URL base del API:
+// - Si VITE_API_URL está set (usado en build), usarlo
+// - Si está en desarrollo local y localhost:5173 → usar localhost:8008
+// - Si está en producción/docker → usar /api/ (proxy relativo a través de nginx)
+let API_URL = import.meta?.env?.VITE_API_URL;
+
+if (!API_URL) {
+  // No environment variable set
+  if (typeof window !== 'undefined') {
+    if (window.location.hostname === 'localhost' && window.location.port === '5173') {
+      // Vite dev server en localhost
+      API_URL = 'http://localhost:8008';
+    } else {
+      // Production o Docker: usar ruta relativa a través de nginx
+      API_URL = '/api';
+    }
+  }
+}
+
+console.log('API_URL:', API_URL);
 
 const api = axios.create({
   baseURL: API_URL,
@@ -41,6 +60,14 @@ export const challengesAPI = {
   create: (data) => api.post('/challenges', data),
   update: (id, data) => api.put(`/challenges/${id}`, data),
   delete: (id) => api.delete(`/challenges/${id}`),
+};
+
+// Users API
+export const usersAPI = {
+  getById: (id) => api.get(`/users/${id}`),
+  update: (id, data) => api.put(`/users/${id}`, data),
+  delete: (id) => api.delete(`/users/${id}`),
+  getAll: () => api.get('/users'),
 };
 
 // Submissions API

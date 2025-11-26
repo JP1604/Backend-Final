@@ -61,7 +61,7 @@ const Navbar = () => {
           {isAuthenticated ? (
             <>
               <div className="nav-links">
-                <NavLink to="/" icon={Home}>Home</NavLink>
+                <NavLink to="/dashboard" icon={Home}>Dashboard</NavLink>
                 <NavLink to="/challenges" icon={Trophy}>Challenges</NavLink>
                 <NavLink to="/submissions" icon={FileCode}>My Submissions</NavLink>
                 {isAdmin && (
@@ -72,10 +72,21 @@ const Navbar = () => {
               <div className="nav-actions">
                 <div className="user-info">
                   <div className="user-avatar">
-                    <User size={18} />
+                    {user?.first_name ? user.first_name.charAt(0).toUpperCase() : <User size={18} />}
                   </div>
-                  <span className="user-email">{user?.email}</span>
+                  <div className="user-details">
+                    <div className="user-name">{user?.first_name || 'User'}</div>
+                    <div className="user-email">{user?.email}</div>
+                  </div>
                 </div>
+                <Link 
+                  to="/profile" 
+                  className="btn-profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  title="Profile"
+                >
+                  <User size={18} />
+                </Link>
                 <button onClick={handleLogout} className="btn-logout">
                   <LogOut size={18} />
                   <span>Logout</span>

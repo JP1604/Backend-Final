@@ -77,7 +77,7 @@ def _map_to_response(submission) -> SubmissionResponse:
 
 
 @router.post(
-    "/", 
+    "/submit", 
     response_model=SubmissionResponse,
     status_code=status.HTTP_201_CREATED,
     summary="Enviar solución a un challenge"
@@ -522,6 +522,59 @@ async def enqueue_submission(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error enqueuing submission: {str(e)}"
+        )
+
+
+
+
+@router.get(
+    "/my",
+    response_model=list,
+    summary="Get my submissions"
+)
+async def get_my_submissions(
+    challenge_id: str = None,
+    status_filter: str = None,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all submissions by the current authenticated user.
+    
+    Optional filters:
+    - **challenge_id**: Filter by specific challenge
+    - **status_filter**: Filter by submission status (QUEUED, RUNNING, ACCEPTED, REJECTED, ERROR)
+    
+    Returns list of submissions for the current user.
+    Requires authentication.
+    """
+    try:
+        submission_repository = SubmissionRepositoryImpl(db)
+        
+        # Get all submissions for current user
+        submissions = await submission_repository.find_by_user_id(current_user["id"])
+        
+        if not submissions:
+            return []
+        
+        # Filter by challenge if specified
+        if challenge_id:
+            submissions = [s for s in submissions if str(s.challenge_id) == challenge_id]
+        
+        # Filter by status if specified
+        if status_filter:
+            submissions = [s for s in submissions if s.status.value == status_filter.upper()]
+        
+        # Sort by most recent first
+        submissions = sorted(submissions, key=lambda x: x.created_at, reverse=True)
+        
+        return [_map_to_response(s) for s in submissions]
+        
+    except Exception as e:
+        print(f"Error getting my submissions: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving submissions"
         )
 
 

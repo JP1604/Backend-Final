@@ -27,6 +27,12 @@ class CreateUserUseCase:
             raise ValueError("Email already registered")
 
         # Hash de la contraseña
+        # Debug: print password length for troubleshooting bcrypt errors (DO NOT LOG ACTUAL PASSWORD)
+        try:
+            pb_len = len(password.encode('utf-8'))
+        except Exception:
+            pb_len = -1
+        print(f"[CreateUserUseCase] password bytes length: {pb_len}")  # temporary debugging
         hashed_password = self.password_service.hash_password(password)
 
         # Crear entidad de usuario
@@ -63,6 +69,14 @@ class CreateUserUseCase:
         # Password validation
         if not password or len(password) < 6:
             raise ValueError("Password must be at least 6 characters long")
+        # Password bytes length validation for bcrypt (72 bytes)
+        try:
+            password_bytes_len = len(password.encode('utf-8'))
+        except Exception:
+            # If encoding fails, treat as invalid input
+            raise ValueError("Invalid password encoding")
+        if password_bytes_len > 72:
+            raise ValueError("Password is too long: must be at most 72 bytes (bcrypt limitation)")
         
         # Name validation
         if not first_name or not first_name.strip():
