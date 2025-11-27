@@ -16,7 +16,6 @@ class TestCaseResultResponse(BaseModel):
 
 class SubmitSolutionRequest(BaseModel):
     challenge_id: str
-    language: ProgrammingLanguage
     code: str
 
 

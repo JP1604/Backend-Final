@@ -65,7 +65,6 @@ const ChallengeDetail = () => {
     try {
       setError('');
       const testCaseData = {
-        input: newTestCase.input.trim(),
         expected_output: newTestCase.expected_output.trim(),
         is_hidden: newTestCase.is_hidden,
         order_index: parseInt(newTestCase.order_index) || testCases.length + 1
@@ -219,10 +218,12 @@ const ChallengeDetail = () => {
                             )}
                           </div>
                           <div className="test-case-content">
-                            <div className="test-case-field">
-                              <label>Input:</label>
-                              <pre className="test-case-value">{tc.input}</pre>
-                            </div>
+                            {tc.input && (
+                              <div className="test-case-field">
+                                <label>Input:</label>
+                                <pre className="test-case-value">{tc.input}</pre>
+                              </div>
+                            )}
                             <div className="test-case-field">
                               <label>Expected Output:</label>
                               <pre className="test-case-value">{tc.expected_output}</pre>
@@ -240,22 +241,12 @@ const ChallengeDetail = () => {
                     <h4>Add New Test Case</h4>
                     <form onSubmit={handleAddTestCase}>
                       <div className="form-group">
-                        <label>Input *</label>
-                        <textarea
-                          value={newTestCase.input}
-                          onChange={(e) => setNewTestCase({ ...newTestCase, input: e.target.value })}
-                          rows={4}
-                          placeholder="Enter test input (e.g., '1\n2' or 'hello')"
-                          required
-                        />
-                      </div>
-                      <div className="form-group">
                         <label>Expected Output *</label>
                         <textarea
                           value={newTestCase.expected_output}
                           onChange={(e) => setNewTestCase({ ...newTestCase, expected_output: e.target.value })}
                           rows={4}
-                          placeholder="Enter expected output (e.g., '3' or 'olleh')"
+                          placeholder="Enter expected output (required)"
                           required
                         />
                       </div>

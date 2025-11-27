@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { challengesAPI } from '../services/api';
-import { AlertCircle, Loader, GraduationCap } from 'lucide-react';
+import { AlertCircle, Loader, GraduationCap, Code2 } from 'lucide-react';
 import './Challenges.css';
 
 const Challenges = () => {
@@ -86,12 +86,20 @@ const Challenges = () => {
                 </span>
               </div>
               
-              {challenge.course_name && (
-                <div className="challenge-course">
-                  <GraduationCap size={16} />
-                  <span>{challenge.course_name}</span>
-                </div>
-              )}
+              <div className="challenge-meta-top">
+                {challenge.course_name && (
+                  <div className="challenge-course">
+                    <GraduationCap size={16} />
+                    <span>{challenge.course_name}</span>
+                  </div>
+                )}
+                {challenge.language && (
+                  <div className="challenge-language">
+                    <Code2 size={16} />
+                    <span>{challenge.language.toUpperCase()}</span>
+                  </div>
+                )}
+              </div>
 
               <p className="challenge-card-description">
                 {challenge.description?.substring(0, 150)}

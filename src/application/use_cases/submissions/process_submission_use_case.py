@@ -90,7 +90,7 @@ class ProcessSubmissionUseCase:
                 "test_cases": [
                     {
                         "id": tc.id,
-                        "input": tc.input,
+                        "input": tc.input if tc.input else None,
                         "expected_output": tc.expected_output,
                         "is_hidden": tc.is_hidden
                     }

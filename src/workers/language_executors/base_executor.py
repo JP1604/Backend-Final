@@ -68,7 +68,7 @@ class BaseExecutor(ABC):
         
         Args:
             code: Source code to execute
-            test_cases: List of test case dictionaries with 'input' and 'expected_output'
+            test_cases: List of test case dictionaries with 'expected_output' (required) and 'input' (optional)
             time_limit: Time limit in milliseconds
             memory_limit: Memory limit in MB
             

@@ -90,15 +90,14 @@ async def submit_solution(
 ):
     """
     Envía una solución de código para un challenge específico.
+    El lenguaje de programación se toma automáticamente del challenge.
     
     - **challenge_id**: ID del challenge a resolver
-    - **language**: Lenguaje de programación usado
     - **code**: Código fuente de la solución
     """
     logger.info(
         f"[SUBMISSION_REQUEST] User {current_user['email']} ({current_user['id']}) "
-        f"submitting solution for challenge {submission_request.challenge_id} "
-        f"in {submission_request.language.value}"
+        f"submitting solution for challenge {submission_request.challenge_id}"
     )
     
     try:
@@ -108,7 +107,6 @@ async def submit_solution(
             user_id=current_user["id"],
             user_role=UserRole(current_user["role"]),
             challenge_id=submission_request.challenge_id,
-            language=submission_request.language,
             code=submission_request.code
         )
         

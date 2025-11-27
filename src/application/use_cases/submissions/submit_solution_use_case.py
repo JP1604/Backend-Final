@@ -31,7 +31,6 @@ class SubmitSolutionUseCase:
         user_id: str,
         user_role: UserRole,
         challenge_id: str,
-        language: ProgrammingLanguage,
         code: str
     ) -> Submission:
         # Only students can submit solutions
@@ -61,6 +60,9 @@ class SubmitSolutionUseCase:
 
         # Validar código
         self._validate_code(code)
+
+        # Usar el lenguaje del challenge (asignado por el profesor)
+        language = challenge.language
 
         # Crear submission
         submission = Submission(

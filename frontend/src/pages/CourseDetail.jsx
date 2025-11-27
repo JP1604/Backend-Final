@@ -25,6 +25,7 @@ const CourseDetail = () => {
     tags: '',
     time_limit: 1000,
     memory_limit: 256,
+    language: 'python',
   });
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [editCourseData, setEditCourseData] = useState({
@@ -115,6 +116,7 @@ const CourseDetail = () => {
         tags: newChallenge.tags.split(',').map(t => t.trim()).filter(t => t),
         time_limit: parseInt(newChallenge.time_limit),
         memory_limit: parseInt(newChallenge.memory_limit),
+        language: newChallenge.language,
         course_id: courseId,
       };
       
@@ -147,6 +149,7 @@ const CourseDetail = () => {
         tags: '',
         time_limit: 1000,
         memory_limit: 256,
+        language: 'python',
       });
       
       // Wait a bit before refreshing to ensure the assignment is committed
@@ -376,6 +379,19 @@ const CourseDetail = () => {
                         placeholder="array, sorting, algorithm"
                       />
                     </div>
+                  </div>
+                  <div className="form-group">
+                    <label>Programming Language *</label>
+                    <select
+                      value={newChallenge.language}
+                      onChange={(e) => setNewChallenge({ ...newChallenge, language: e.target.value })}
+                      required
+                    >
+                      <option value="python">Python</option>
+                      <option value="nodejs">Node.js (JavaScript)</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                    </select>
                   </div>
                   <div className="form-row">
                     <div className="form-group">

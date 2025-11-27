@@ -10,7 +10,6 @@ const Submissions = () => {
   const navigate = useNavigate();
   const { challengeId } = useParams();
   const [code, setCode] = useState('');
-  const [language, setLanguage] = useState('python');
   const [challenge, setChallenge] = useState(null);
   const [mySubmissions, setMySubmissions] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -77,7 +76,7 @@ const Submissions = () => {
 
     try {
       setSubmitting(true);
-      const response = await submissionsAPI.submit(challengeId, code, language);
+      const response = await submissionsAPI.submit(challengeId, code);
       const data = response.data || response;
       
       setSuccess('Code submitted successfully! Processing...');
@@ -166,6 +165,7 @@ const Submissions = () => {
             <div className="challenge-constraints">
               <span>Time Limit: {challenge.time_limit}ms</span>
               <span>Memory Limit: {challenge.memory_limit}MB</span>
+              <span>Language: <strong>{challenge.language?.toUpperCase() || 'N/A'}</strong></span>
             </div>
           </div>
         )}
@@ -175,21 +175,15 @@ const Submissions = () => {
           <div className="code-editor-section">
             <h2>Submit Your Solution</h2>
             <form onSubmit={handleSubmit} className="submission-form">
-              <div className="form-group">
-                <label htmlFor="language">Language</label>
-                <select
-                  id="language"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="form-input"
-                  disabled={submitting}
-                >
-                  <option value="python">Python</option>
-                  <option value="javascript">JavaScript</option>
-                  <option value="java">Java</option>
-                  <option value="cpp">C++</option>
-                </select>
-              </div>
+              {challenge && (
+                <div className="form-group">
+                  <label>Programming Language</label>
+                  <div className="language-display">
+                    <strong>{challenge.language?.toUpperCase() || 'N/A'}</strong>
+                    <span className="language-note">(Assigned by instructor)</span>
+                  </div>
+                </div>
+              )}
 
               <div className="form-group">
                 <label htmlFor="code">Code</label>

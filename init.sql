@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS challenges (
     time_limit INTEGER NOT NULL,
     memory_limit INTEGER NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
+    language VARCHAR(20) NOT NULL DEFAULT 'python',
     created_by UUID NOT NULL REFERENCES users(id),
     course_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -46,7 +47,7 @@ CREATE TABLE IF NOT EXISTS challenges (
 CREATE TABLE IF NOT EXISTS test_cases (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     challenge_id UUID NOT NULL REFERENCES challenges(id) ON DELETE CASCADE,
-    input TEXT NOT NULL,
+    input TEXT,  -- Optional - only expected_output is required
     expected_output TEXT NOT NULL,
     is_hidden BOOLEAN DEFAULT FALSE,
     order_index INTEGER NOT NULL,

@@ -31,6 +31,7 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             challenge_model.time_limit = challenge.time_limit
             challenge_model.memory_limit = challenge.memory_limit
             challenge_model.status = challenge.status
+            challenge_model.language = challenge.language
             challenge_model.course_id = challenge.course_id
             challenge_model.updated_at = datetime.utcnow()
             self.db.commit()
@@ -80,6 +81,36 @@ class ChallengeRepositoryImpl(ChallengeRepository):
         return [self._to_domain(challenge_model) for challenge_model in challenge_models]
 
     def _to_domain(self, challenge_model: ChallengeModel) -> Challenge:
+        from domain.entities.submission import ProgrammingLanguage
+        # Handle language conversion - it can be an enum or a string
+        if challenge_model.language is None:
+            language = ProgrammingLanguage.PYTHON  # Default
+        elif isinstance(challenge_model.language, str):
+            # Convert lowercase to uppercase for enum matching
+            lang_upper = challenge_model.language.upper()
+            try:
+                language = ProgrammingLanguage(lang_upper)
+            except ValueError:
+                # Fallback: try to map common variations
+                lang_map = {
+                    'python': ProgrammingLanguage.PYTHON,
+                    'nodejs': ProgrammingLanguage.NODEJS,
+                    'javascript': ProgrammingLanguage.NODEJS,
+                    'java': ProgrammingLanguage.JAVA,
+                    'cpp': ProgrammingLanguage.CPP,
+                    'c++': ProgrammingLanguage.CPP
+                }
+                language = lang_map.get(challenge_model.language.lower(), ProgrammingLanguage.PYTHON)
+        elif hasattr(challenge_model.language, 'value'):
+            lang_value = challenge_model.language.value
+            if isinstance(lang_value, str):
+                lang_upper = lang_value.upper()
+                language = ProgrammingLanguage(lang_upper)
+            else:
+                language = ProgrammingLanguage(challenge_model.language.value)
+        else:
+            language = ProgrammingLanguage(challenge_model.language)
+        
         return Challenge(
             id=str(challenge_model.id),
             title=challenge_model.title,
@@ -89,6 +120,7 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             time_limit=challenge_model.time_limit,
             memory_limit=challenge_model.memory_limit,
             status=challenge_model.status,
+            language=language,
             created_by=str(challenge_model.created_by),
             course_id=str(challenge_model.course_id) if challenge_model.course_id else None,
             created_at=challenge_model.created_at,
@@ -105,6 +137,7 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             time_limit=challenge.time_limit,
             memory_limit=challenge.memory_limit,
             status=challenge.status,
+            language=challenge.language,
             created_by=challenge.created_by,
             course_id=challenge.course_id,
             created_at=challenge.created_at,
@@ -124,8 +157,8 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             TestCase(
                 id=str(tc.id),
                 challenge_id=str(tc.challenge_id),
-                input=tc.input,
                 expected_output=tc.expected_output,
+                input=tc.input if tc.input else None,
                 is_hidden=tc.is_hidden,
                 order_index=tc.order_index
             )
@@ -150,8 +183,8 @@ class ChallengeRepositoryImpl(ChallengeRepository):
         return TestCase(
             id=str(test_case_model.id),
             challenge_id=str(test_case_model.challenge_id),
-            input=test_case_model.input,
             expected_output=test_case_model.expected_output,
+            input=test_case_model.input if test_case_model.input else None,
             is_hidden=test_case_model.is_hidden,
             order_index=test_case_model.order_index
         )

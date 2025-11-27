@@ -10,8 +10,8 @@ from datetime import datetime
 class TestCaseDTO:
     """Test case data transfer object"""
     id: str
-    input: str
     expected_output: str
+    input: Optional[str] = None
     is_hidden: bool = False
     order_index: int = 0
 

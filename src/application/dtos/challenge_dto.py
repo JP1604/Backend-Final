@@ -2,6 +2,7 @@ from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from uuid import UUID
 from domain.entities.challenge import ChallengeDifficulty
+from domain.entities.submission import ProgrammingLanguage
 
 
 class CreateChallengeRequest(BaseModel):
@@ -11,6 +12,7 @@ class CreateChallengeRequest(BaseModel):
     tags: List[str]
     time_limit: int
     memory_limit: int
+    language: ProgrammingLanguage
     course_id: Optional[str] = Field(None, description="UUID válido del curso o null")
     
     @field_validator('course_id')
@@ -35,6 +37,7 @@ class ChallengeResponse(BaseModel):
     time_limit: int
     memory_limit: int
     status: str
+    language: ProgrammingLanguage
     created_by: str
     course_id: Optional[str]
     course_name: Optional[str] = None

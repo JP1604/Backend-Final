@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 from domain.entities.challenge import Challenge, ChallengeDifficulty, ChallengeStatus
 from domain.entities.user import UserRole
+from domain.entities.submission import ProgrammingLanguage
 from domain.repositories.challenge_repository import ChallengeRepository
 
 
@@ -18,6 +19,7 @@ class CreateChallengeUseCase:
         tags: List[str],
         time_limit: int,
         memory_limit: int,
+        language: ProgrammingLanguage,
         created_by: str,
         user_role: UserRole,
         course_id: str = None
@@ -39,6 +41,7 @@ class CreateChallengeUseCase:
             time_limit=time_limit,
             memory_limit=memory_limit,
             status=ChallengeStatus.PUBLISHED,
+            language=language,
             created_by=created_by,
             course_id=course_id,
             created_at=datetime.utcnow(),

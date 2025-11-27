@@ -34,6 +34,7 @@ class ChallengeModel(Base):
     time_limit = Column(Integer, nullable=False)
     memory_limit = Column(Integer, nullable=False)
     status = Column(String(20), nullable=False, default='draft')  # VARCHAR en BD, no ENUM
+    language = Column(SQLEnum(ProgrammingLanguage), nullable=False)
     created_by = Column(UUID(as_uuid=True), nullable=False, index=True)
     course_id = Column(UUID(as_uuid=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -61,7 +62,7 @@ class TestCaseModel(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
     challenge_id = Column(UUID(as_uuid=True), nullable=False, index=True)
-    input = Column(Text, nullable=False)
+    input = Column(Text, nullable=True)  # Optional - only expected_output is required
     expected_output = Column(Text, nullable=False)
     is_hidden = Column(Boolean, nullable=False, default=False)
     order_index = Column(Integer, nullable=False)

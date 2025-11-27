@@ -59,6 +59,7 @@ def _map_challenge_to_response(challenge, db: Optional[Session] = None) -> Chall
         time_limit=challenge.time_limit,
         memory_limit=challenge.memory_limit,
         status=challenge.status,
+        language=challenge.language,
         created_by=challenge.created_by,
         course_id=challenge.course_id,
         course_name=course_name,
@@ -98,6 +99,7 @@ async def create_challenge(
             tags=challenge_request.tags,
             time_limit=challenge_request.time_limit,
             memory_limit=challenge_request.memory_limit,
+            language=challenge_request.language,
             created_by=current_user["id"],
             user_role=UserRole(current_user["role"]),
             course_id=challenge_request.course_id
@@ -141,7 +143,7 @@ async def create_challenge(
 )
 async def get_challenges(
     course_id: Optional[str] = Query(None, description="Filtrar por ID de curso"),
-    status: Optional[str] = Query(None, description="Filtrar por estado"),
+    status_filter: Optional[str] = Query(None, description="Filtrar por estado"),
     difficulty: Optional[str] = Query(None, description="Filtrar por dificultad"),
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
@@ -163,7 +165,7 @@ async def get_challenges(
             user_id=current_user["id"],
             user_role=UserRole(current_user["role"]),
             course_id=course_id,
-            status=status,
+            status=status_filter,
             difficulty=difficulty
         )
         
@@ -171,6 +173,7 @@ async def get_challenges(
         
     except Exception as e:
         print(f"Error en get_challenges: {str(e)}")
+        logger.error(f"Error en get_challenges: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno del servidor"
@@ -192,8 +195,8 @@ async def create_test_case(
     """
     Agrega un test case a un challenge (solo profesores/admins).
     
-    - **input**: Entrada del test case
-    - **expected_output**: Salida esperada
+    - **expected_output**: Salida esperada (requerido)
+    - **input**: Entrada del test case (opcional)
     - **is_hidden**: Si el test case es oculto para estudiantes
     - **order_index**: Orden de ejecución
     """
@@ -228,8 +231,8 @@ async def create_test_case(
         test_case = TestCase(
             id=str(uuid.uuid4()),
             challenge_id=challenge_id,
-            input=test_case_request.input,
             expected_output=test_case_request.expected_output,
+            input=test_case_request.input if test_case_request.input else None,
             is_hidden=test_case_request.is_hidden,
             order_index=test_case_request.order_index
         )

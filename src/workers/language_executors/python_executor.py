@@ -42,13 +42,13 @@ class PythonExecutor(BaseExecutor):
         results = []
         total_time = 0
         
-        # Simulate execution for each test case
+        # Execute code for each test case
         for i, test_case in enumerate(test_cases):
             case_id = test_case.get("id", i + 1)
-            input_data = test_case.get("input", "")
+            input_data = test_case.get("input") or ""  # Use empty string if input is None
             expected_output = test_case.get("expected_output", "")
             
-            # STUB: Simulate code execution
+            # Execute code
             result = await self._execute_test_case(
                 code, input_data, expected_output, case_id, time_limit, memory_limit
             )
@@ -99,10 +99,12 @@ class PythonExecutor(BaseExecutor):
         try:
             # Prepare the code with input handling
             # Wrap code to capture stdout and handle input
-            # Escape single quotes in input data
-            escaped_input = input_data.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
-            
-            wrapped_code = f"""
+            # If input_data is empty or None, don't set stdin
+            if input_data:
+                # Escape single quotes in input data
+                escaped_input = input_data.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
+                
+                wrapped_code = f"""
 import sys
 from io import StringIO
 
@@ -122,6 +124,25 @@ finally:
     output = sys.stdout.getvalue()
     sys.stdout = old_stdout
     sys.stdin = old_stdin
+    print(output, end='')
+"""
+            else:
+                # No input - just capture stdout
+                wrapped_code = f"""
+import sys
+from io import StringIO
+
+# Capture stdout
+old_stdout = sys.stdout
+sys.stdout = StringIO()
+
+try:
+    # User's code
+{self._indent_code(code)}
+finally:
+    # Restore stdout and get output
+    output = sys.stdout.getvalue()
+    sys.stdout = old_stdout
     print(output, end='')
 """
             
