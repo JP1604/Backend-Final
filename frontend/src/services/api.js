@@ -102,6 +102,8 @@ export const challengesAPI = {
   create: (data) => api.post('/challenges/', data),  // Agregar barra final
   update: (id, data) => api.put(`/challenges/${id}`, data),
   delete: (id) => api.delete(`/challenges/${id}`),
+  getTestCases: (challengeId) => api.get(`/challenges/${challengeId}/test-cases`),
+  createTestCase: (challengeId, data) => api.post(`/challenges/${challengeId}/test-cases`, data),
 };
 
 // Users API

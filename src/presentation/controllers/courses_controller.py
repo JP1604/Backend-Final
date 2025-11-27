@@ -429,7 +429,7 @@ async def assign_challenge(
 @router.get(
     "/{course_id}/students",
     response_model=List[StudentDetailResponse],
-    summary="List students enrolled in a course (Teacher/Admin only)"
+    summary="List students enrolled in a course"
 )
 async def list_course_students(
     course_id: str,
@@ -439,9 +439,9 @@ async def list_course_students(
     """
     Get detailed list of students enrolled in a course.
     
-    - **Teachers**: Can only view students in their own courses
+    - **Teachers**: Can view students in their own courses
     - **Admins**: Can view students in any course
-    - **Students**: Not allowed
+    - **Students**: Can view students in courses they are enrolled in
     """
     logger.info(f"[LIST_STUDENTS] User {current_user['email']} listing students in course {course_id}")
     
@@ -453,19 +453,24 @@ async def list_course_students(
         if not course:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
         
-        # Permission check: only course teacher or admin
+        # Permission check
         user_role = UserRole(current_user["role"])
-        if user_role == UserRole.STUDENT:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Students cannot view course student lists"
-            )
         
-        if not course.can_be_managed_by(current_user["id"], user_role):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Insufficient permissions to view course students"
-            )
+        if user_role == UserRole.STUDENT:
+            # Students can only view students in courses they are enrolled in
+            student_courses = await course_repo.find_by_student(current_user["id"])
+            if course.id not in [c.id for c in student_courses]:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You must be enrolled in this course to view its students"
+                )
+        elif user_role in [UserRole.PROFESSOR, UserRole.ADMIN]:
+            # Teachers and admins need to check if they can manage the course
+            if not course.can_be_managed_by(current_user["id"], user_role):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Insufficient permissions to view course students"
+                )
         
         # Get student IDs
         student_ids = await course_repo.get_students(course_id)

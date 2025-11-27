@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authAPI } from '../services/api';
+import { authAPI, usersAPI } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -17,18 +17,45 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      // Decode JWT to get user info (simple decode, not verification)
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ id: payload.sub, email: payload.email, role: payload.role });
-      } catch (error) {
-        console.error('Invalid token:', error);
-        localStorage.removeItem('token');
-        setToken(null);
+    const loadUser = async () => {
+      if (token) {
+        try {
+          // Decode JWT to get user ID (simple decode, not verification)
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const userId = payload.sub;
+          
+          // Fetch complete user information from backend
+          try {
+            const response = await usersAPI.getById(userId);
+            const userData = response.data || response;
+            
+            setUser({
+              id: userData.id,
+              email: userData.email,
+              role: userData.role,
+              first_name: userData.first_name,
+              last_name: userData.last_name,
+            });
+          } catch (fetchError) {
+            console.error('Error fetching user data:', fetchError);
+            // Fallback to JWT data if API call fails
+            setUser({ 
+              id: payload.sub, 
+              email: payload.email, 
+              role: payload.role 
+            });
+          }
+        } catch (error) {
+          console.error('Invalid token:', error);
+          localStorage.removeItem('token');
+          setToken(null);
+          setUser(null);
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+    
+    loadUser();
   }, [token]);
 
   const login = async (email, password) => {

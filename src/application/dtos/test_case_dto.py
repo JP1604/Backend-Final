@@ -4,7 +4,6 @@ from typing import Optional
 
 class CreateTestCaseRequest(BaseModel):
     """Request to create a test case for a challenge"""
-    challenge_id: str
     input: str
     expected_output: str
     is_hidden: bool = False

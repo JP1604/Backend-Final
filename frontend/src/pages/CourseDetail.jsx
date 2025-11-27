@@ -54,12 +54,8 @@ const CourseDetail = () => {
       const promises = [
         coursesAPI.getById(courseId),
         coursesAPI.getChallenges(courseId),
+        coursesAPI.getStudents(courseId), // All users (students, teachers, admins) can view students
       ];
-      
-      // Only fetch students if user is a teacher/admin
-      if (isTeacher) {
-        promises.push(coursesAPI.getStudents(courseId));
-      }
       
       const results = await Promise.all(promises);
       const [courseResp, challengesResp, studentsResp] = results;
@@ -68,8 +64,8 @@ const CourseDetail = () => {
       // Handle challenges response - it can be an array directly or wrapped in data
       const challengesData = challengesResp.data || challengesResp;
       setChallenges(Array.isArray(challengesData) ? challengesData : []);
-      // Handle students response - only if user can view (professors/admins)
-      if (isTeacher && studentsResp) {
+      // Handle students response - all enrolled users can view
+      if (studentsResp) {
         const studentsData = studentsResp.data || studentsResp;
         setStudents(Array.isArray(studentsData) ? studentsData : []);
       } else {

@@ -47,18 +47,8 @@ class CreateChallengeUseCase:
 
         saved_challenge = await self.challenge_repository.save(challenge)
         
-        # Crear un test case por defecto para que el challenge pueda ser usado
-        # Los profesores pueden agregar más test cases después
-        from domain.repositories.challenge_repository import TestCase
-        default_test_case = TestCase(
-            id=str(uuid.uuid4()),
-            challenge_id=saved_challenge.id,
-            input="1\n2",
-            expected_output="3",
-            is_hidden=False,
-            order_index=1
-        )
-        await self.challenge_repository.save_test_case(default_test_case)
+        # Los profesores deben agregar test cases manualmente después de crear el challenge
+        # No se crea ningún test case por defecto
         
         return saved_challenge
 

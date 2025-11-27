@@ -1,11 +1,12 @@
 """
-Python code executor (STUB)
-This is a simplified stub that simulates code execution
-Replace with proper Docker-based sandboxed execution later
+Python code executor
+Executes Python code and compares output with expected results
 """
 import asyncio
 import time
-import random
+import subprocess
+import sys
+import io
 from typing import List, Dict, Any
 import logging
 from .base_executor import BaseExecutor, ExecutionResult
@@ -77,80 +78,161 @@ class PythonExecutor(BaseExecutor):
         memory_limit: int
     ) -> ExecutionResult:
         """
-        Execute a single test case (STUB)
+        Execute a single test case by actually running the Python code
         
-        TODO: Actual implementation should:
-        1. Create isolated Docker container
-        2. Mount code and input files
-        3. Run with timeout and memory limits
-        4. Capture stdout/stderr
-        5. Compare output with expected
-        6. Return ExecutionResult with actual metrics
+        Args:
+            code: Python code to execute
+            input_data: Input for the test case
+            expected_output: Expected output string
+            case_id: Test case identifier
+            time_limit: Time limit in milliseconds
+            memory_limit: Memory limit in MB (not enforced in this basic implementation)
+            
+        Returns:
+            ExecutionResult with actual execution results
         """
+        start_time = time.time()
+        actual_output = ""
+        error_message = ""
+        status = "RUNTIME_ERROR"
         
-        # Simulate execution time (100-500ms)
-        execution_time = random.randint(100, 500)
-        await asyncio.sleep(execution_time / 1000.0)  # Simulate work
-        
-        # Simple validation: check if code contains basic patterns
-        # In a real implementation, this would actually execute the code
-        code_lower = code.lower()
-        has_return = "return" in code_lower or "print" in code_lower
-        
-        # Determine outcome based on simple heuristics
-        # For stub: if code looks valid and has basic structure, accept it
-        if has_return and len(code.strip()) > 10:
-            # 90% chance of acceptance for valid-looking code
-            outcome = random.choices(
-                ["ACCEPTED", "WRONG_ANSWER"],
-                weights=[90, 10]
-            )[0]
-        else:
-            # Invalid code structure
-            outcome = "RUNTIME_ERROR"
-        
-        # Check for time limit
-        if execution_time > time_limit:
-            outcome = "TIME_LIMIT_EXCEEDED"
-        
-        # Simulate memory usage (10-50MB)
-        memory_used = random.randint(10, 50)
-        
-        if outcome == "ACCEPTED":
-            return ExecutionResult(
-                case_id=case_id,
-                status="ACCEPTED",
-                time_ms=execution_time,
-                memory_mb=memory_used,
-                output=expected_output,  # Stub: assume correct output
-                expected_output=expected_output
+        try:
+            # Prepare the code with input handling
+            # Wrap code to capture stdout and handle input
+            # Escape single quotes in input data
+            escaped_input = input_data.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
+            
+            wrapped_code = f"""
+import sys
+from io import StringIO
+
+# Capture stdout
+old_stdout = sys.stdout
+sys.stdout = StringIO()
+
+# Set stdin to input data
+old_stdin = sys.stdin
+sys.stdin = StringIO('''{escaped_input}''')
+
+try:
+    # User's code
+{self._indent_code(code)}
+finally:
+    # Restore stdout and get output
+    output = sys.stdout.getvalue()
+    sys.stdout = old_stdout
+    sys.stdin = old_stdin
+    print(output, end='')
+"""
+            
+            # Execute code with timeout
+            timeout_seconds = (time_limit / 1000.0) + 0.5  # Add small buffer
+            process = await asyncio.create_subprocess_exec(
+                sys.executable, "-c", wrapped_code,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                limit=1024 * 1024  # 1MB output limit
             )
-        elif outcome == "WRONG_ANSWER":
+            
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=timeout_seconds
+                )
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                execution_time = int((time.time() - start_time) * 1000)
+                return ExecutionResult(
+                    case_id=case_id,
+                    status="TIME_LIMIT_EXCEEDED",
+                    time_ms=execution_time,
+                    memory_mb=0,
+                    output="",
+                    expected_output=expected_output,
+                    error_message=f"Execution exceeded time limit of {time_limit}ms"
+                )
+            
+            execution_time = int((time.time() - start_time) * 1000)
+            
+            # Check if process had errors
+            if process.returncode != 0:
+                error_message = stderr.decode('utf-8', errors='replace') if stderr else "Unknown runtime error"
+                actual_output = stdout.decode('utf-8', errors='replace') if stdout else ""
+                return ExecutionResult(
+                    case_id=case_id,
+                    status="RUNTIME_ERROR",
+                    time_ms=execution_time,
+                    memory_mb=0,
+                    output=actual_output,
+                    expected_output=expected_output,
+                    error_message=error_message
+                )
+            
+            # Get actual output
+            actual_output = stdout.decode('utf-8', errors='replace').strip()
+            
+            # Normalize outputs for comparison (strip whitespace, normalize line endings)
+            actual_normalized = self._normalize_output(actual_output)
+            expected_normalized = self._normalize_output(expected_output)
+            
+            # Compare outputs
+            if actual_normalized == expected_normalized:
+                status = "ACCEPTED"
+            else:
+                status = "WRONG_ANSWER"
+                error_message = f"Expected: '{expected_output}', Got: '{actual_output}'"
+            
+            # Check time limit
+            if execution_time > time_limit:
+                status = "TIME_LIMIT_EXCEEDED"
+                error_message = f"Execution exceeded time limit of {time_limit}ms"
+            
             return ExecutionResult(
                 case_id=case_id,
-                status="WRONG_ANSWER",
+                status=status,
                 time_ms=execution_time,
-                memory_mb=memory_used,
-                output="Wrong output",
+                memory_mb=0,  # Memory tracking not implemented in basic version
+                output=actual_output,
                 expected_output=expected_output,
-                error_message="Output does not match expected result"
+                error_message=error_message
             )
-        elif outcome == "TIME_LIMIT_EXCEEDED":
-            return ExecutionResult(
-                case_id=case_id,
-                status="TIME_LIMIT_EXCEEDED",
-                time_ms=time_limit + 100,
-                memory_mb=memory_used,
-                error_message=f"Execution exceeded time limit of {time_limit}ms"
-            )
-        else:  # RUNTIME_ERROR
+            
+        except Exception as e:
+            execution_time = int((time.time() - start_time) * 1000)
+            logger.error(f"Error executing test case {case_id}: {str(e)}", exc_info=True)
             return ExecutionResult(
                 case_id=case_id,
                 status="RUNTIME_ERROR",
                 time_ms=execution_time,
-                memory_mb=memory_used,
-                error_message="Runtime error: Invalid code structure"
+                memory_mb=0,
+                output=actual_output,
+                expected_output=expected_output,
+                error_message=f"Execution error: {str(e)}"
             )
+    
+    def _indent_code(self, code: str) -> str:
+        """Indent code by 4 spaces for wrapping"""
+        if not code:
+            return ""
+        lines = code.split('\n')
+        # Indent each non-empty line, preserve empty lines
+        indented = []
+        for line in lines:
+            if line.strip():
+                indented.append('    ' + line)
+            else:
+                indented.append(line)
+        return '\n'.join(indented)
+    
+    def _normalize_output(self, output: str) -> str:
+        """Normalize output for comparison (strip, normalize line endings)"""
+        if not output:
+            return ""
+        # Strip leading/trailing whitespace and normalize line endings
+        normalized = output.strip().replace('\r\n', '\n').replace('\r', '\n')
+        # Remove trailing newlines for comparison
+        return normalized.rstrip('\n')
     
     def _create_error_response(self, error_message: str) -> Dict[str, Any]:
         """Create an error response"""
