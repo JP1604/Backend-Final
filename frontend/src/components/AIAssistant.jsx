@@ -14,7 +14,8 @@ const AIAssistant = ({ onApplySuggestion, currentChallenge }) => {
   const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
   const OPENAI_PROJECT_ID = import.meta.env.VITE_OPENAI_PROJECT_ID; // opcional
   const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-  const OPENAI_MODEL = 'gpt-4.1-nano';
+  // Modelo real y soportado por OpenAI (rápido y económico)
+  const OPENAI_MODEL = 'gpt-4o-mini';
 
   const generateSuggestions = async () => {
     if (!topic.trim()) {
@@ -179,8 +180,10 @@ REGLAS FINALES:
             content: prompt,
           },
         ],
-        temperature: 0.7,
-        max_tokens: 2000,
+        // Para modelos nuevos se recomienda este campo en vez de max_tokens
+        max_completion_tokens: 2000,
+        // Pedimos explícitamente JSON para simplificar el parseo
+        response_format: { type: 'json_object' },
       }),
     });
 
@@ -208,9 +211,20 @@ REGLAS FINALES:
     const data = await response.json();
     console.log('OpenAI API Full Response:', data);
 
-    const text = data.choices?.[0]?.message?.content;
-    if (!text) {
-      throw new Error('Respuesta vacía de OpenAI');
+    // Algunos modelos nuevos devuelven el contenido como array de "parts"
+    let text = data?.choices?.[0]?.message?.content;
+
+    if (Array.isArray(text)) {
+      // Unimos todas las partes en un solo string
+      text = text
+        .map((part) => (typeof part === 'string' ? part : part?.text ?? ''))
+        .join('\n')
+        .trim();
+    }
+
+    if (!text || typeof text !== 'string') {
+      console.error('Unexpected OpenAI response shape. choices[0].message.content:', text);
+      throw new Error('Respuesta vacía o inesperada de OpenAI');
     }
 
     console.log('OpenAI Raw Text:', text);
