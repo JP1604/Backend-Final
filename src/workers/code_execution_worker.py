@@ -50,7 +50,7 @@ class CodeExecutionWorker:
             language: Programming language to process (python, java, nodejs, cpp)
             database_url: PostgreSQL database connection URL
         """
-        self.language = language.lower()
+        self.language = language.upper()
         self.database_url = database_url
         self.running = False
         
@@ -80,7 +80,9 @@ class CodeExecutionWorker:
             "cpp": CppExecutor
         }
         
-        executor_class = executors.get(self.language)
+        # Convert to lowercase for lookup (language is stored as uppercase)
+        language_key = self.language.lower()
+        executor_class = executors.get(language_key)
         if not executor_class:
             raise ValueError(f"Unsupported language: {self.language}")
         
@@ -167,6 +169,28 @@ class CodeExecutionWorker:
             )
             
             # Step 2: Execute code (worker's responsibility - not business logic)
+            # Validate that job language matches worker language
+            job_language = job.language.upper() if isinstance(job.language, str) else str(job.language).upper()
+            if job_language != self.language:
+                logger.error(
+                    f"Language mismatch: Worker is {self.language} but job is {job_language} "
+                    f"for submission {job.submission_id}. This should not happen - check queue routing."
+                )
+                # Mark submission as failed
+                try:
+                    submission_repo = SubmissionRepositoryImpl(db)
+                    submission = await submission_repo.find_by_id(job.submission_id)
+                    if submission:
+                        from domain.entities.submission import SubmissionStatus
+                        submission.status = SubmissionStatus.RUNTIME_ERROR
+                        submission.score = 0
+                        submission.cases = []
+                        submission.updated_at = datetime.utcnow()
+                        await submission_repo.update(submission)
+                except Exception as e:
+                    logger.error(f"Failed to mark submission {job.submission_id} as failed: {str(e)}")
+                return
+            
             logger.info(f"Executing {self.language} code for submission {job.submission_id}")
             raw_result = await self.executor.execute_code(
                 code=execution_context["code"],

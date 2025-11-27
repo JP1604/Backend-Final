@@ -1,21 +1,27 @@
 """
-Python code executor
-Executes Python code and compares output with expected results
+Python code executor using Docker
+Executes Python code in isolated Docker containers
 """
-import asyncio
-import time
-import subprocess
-import sys
-import io
-from typing import List, Dict, Any
 import logging
+from typing import List, Dict, Any, Optional
 from .base_executor import BaseExecutor, ExecutionResult
+from .docker_runner import DockerRunner
 
 logger = logging.getLogger(__name__)
 
 
 class PythonExecutor(BaseExecutor):
-    """Executor for Python code submissions"""
+    """Executor for Python code submissions using Docker"""
+    
+    def __init__(self, docker_runner: Optional[DockerRunner] = None):
+        """
+        Initialize Python executor
+        
+        Args:
+            docker_runner: Optional DockerRunner instance (creates new one if not provided)
+        """
+        super().__init__()
+        self.docker_runner = docker_runner or DockerRunner()
     
     def get_language_name(self) -> str:
         return "Python"
@@ -28,29 +34,44 @@ class PythonExecutor(BaseExecutor):
         memory_limit: int
     ) -> Dict[str, Any]:
         """
-        Execute Python code against test cases (STUB VERSION)
-        
-        TODO: Replace with proper Docker container execution:
+        Execute Python code against test cases using Docker
         """
-        logger.info(f"Executing Python code with {len(test_cases)} test cases")
+        code_preview = code[:200] + "..." if len(code) > 200 else code
+        logger.info(
+            f"[PYTHON_EXEC] Starting execution - Test cases: {len(test_cases)}, "
+            f"Time limit: {time_limit}ms, Memory limit: {memory_limit}MB"
+        )
+        logger.debug(f"[PYTHON_EXEC] Code preview (first 200 chars): {code_preview}")
         
         # Validate code first
         is_valid, error_msg = await self.validate_code(code)
         if not is_valid:
+            logger.warning(f"[PYTHON_EXEC] Code validation failed: {error_msg}")
             return self._create_error_response(error_msg)
         
         results = []
         total_time = 0
         
-        # Execute code for each test case
+        # Execute each test case
         for i, test_case in enumerate(test_cases):
             case_id = test_case.get("id", i + 1)
-            input_data = test_case.get("input") or ""  # Use empty string if input is None
+            input_data = test_case.get("input", "") or ""
             expected_output = test_case.get("expected_output", "")
             
-            # Execute code
+            logger.info(
+                f"[PYTHON_EXEC] Executing test case {case_id} - "
+                f"Input: {repr(input_data[:100])}, Expected: {repr(expected_output[:100])}"
+            )
+            
             result = await self._execute_test_case(
                 code, input_data, expected_output, case_id, time_limit, memory_limit
+            )
+            
+            logger.info(
+                f"[PYTHON_EXEC] Test case {case_id} completed - "
+                f"Status: {result.status}, Time: {result.time_ms}ms, "
+                f"Actual output: {repr(result.output[:100])}, "
+                f"Error: {repr(result.error_message[:100]) if result.error_message else 'None'}"
             )
             
             results.append(result)
@@ -59,6 +80,12 @@ class PythonExecutor(BaseExecutor):
         # Calculate final status and score
         status = self._determine_overall_status(results)
         score = self._calculate_score(results)
+        
+        logger.info(
+            f"[PYTHON_EXEC] Execution completed - "
+            f"Status: {status}, Score: {score}, Total time: {total_time}ms, "
+            f"Passed: {sum(1 for r in results if r.status == 'ACCEPTED')}/{len(results)}"
+        )
         
         return {
             "status": status,
@@ -77,183 +104,85 @@ class PythonExecutor(BaseExecutor):
         time_limit: int,
         memory_limit: int
     ) -> ExecutionResult:
-        """
-        Execute a single test case by actually running the Python code
-        
-        Args:
-            code: Python code to execute
-            input_data: Input for the test case
-            expected_output: Expected output string
-            case_id: Test case identifier
-            time_limit: Time limit in milliseconds
-            memory_limit: Memory limit in MB (not enforced in this basic implementation)
-            
-        Returns:
-            ExecutionResult with actual execution results
-        """
-        start_time = time.time()
-        actual_output = ""
-        error_message = ""
-        status = "RUNTIME_ERROR"
+        """Execute a single test case using Docker"""
         
         try:
-            # Prepare the code with input handling
-            # Wrap code to capture stdout and handle input
-            # If input_data is empty or None, don't set stdin
-            if input_data:
-                # Escape single quotes in input data
-                escaped_input = input_data.replace("\\", "\\\\").replace("'", "\\'").replace('"', '\\"')
-                
-                wrapped_code = f"""
-import sys
-from io import StringIO
-
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = StringIO()
-
-# Set stdin to input data
-old_stdin = sys.stdin
-sys.stdin = StringIO('''{escaped_input}''')
-
-try:
-    # User's code
-{self._indent_code(code)}
-finally:
-    # Restore stdout and get output
-    output = sys.stdout.getvalue()
-    sys.stdout = old_stdout
-    sys.stdin = old_stdin
-    print(output, end='')
-"""
-            else:
-                # No input - just capture stdout
-                wrapped_code = f"""
-import sys
-from io import StringIO
-
-# Capture stdout
-old_stdout = sys.stdout
-sys.stdout = StringIO()
-
-try:
-    # User's code
-{self._indent_code(code)}
-finally:
-    # Restore stdout and get output
-    output = sys.stdout.getvalue()
-    sys.stdout = old_stdout
-    print(output, end='')
-"""
-            
-            # Execute code with timeout
-            timeout_seconds = (time_limit / 1000.0) + 0.5  # Add small buffer
-            process = await asyncio.create_subprocess_exec(
-                sys.executable, "-c", wrapped_code,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                limit=1024 * 1024  # 1MB output limit
+            # Run code in Docker container
+            docker_result = await self.docker_runner.run_code(
+                language="python",
+                code=code,
+                input_data=input_data,
+                time_limit_ms=time_limit,
+                memory_limit_mb=memory_limit,
+                compile_first=False
             )
             
-            try:
-                stdout, stderr = await asyncio.wait_for(
-                    process.communicate(),
-                    timeout=timeout_seconds
-                )
-            except asyncio.TimeoutError:
-                process.kill()
-                await process.wait()
-                execution_time = int((time.time() - start_time) * 1000)
-                return ExecutionResult(
-                    case_id=case_id,
-                    status="TIME_LIMIT_EXCEEDED",
-                    time_ms=execution_time,
-                    memory_mb=0,
-                    output="",
-                    expected_output=expected_output,
-                    error_message=f"Execution exceeded time limit of {time_limit}ms"
-                )
+            actual_output = docker_result.get("output", "").strip()
+            error_output = docker_result.get("error", "").strip()
+            execution_time = docker_result.get("execution_time_ms", 0)
+            exit_code = docker_result.get("exit_code", 1)
             
-            execution_time = int((time.time() - start_time) * 1000)
+            logger.debug(
+                f"[PYTHON_EXEC] Docker result for case {case_id} - "
+                f"Exit code: {exit_code}, Time: {execution_time}ms, "
+                f"Output length: {len(actual_output)}, Error length: {len(error_output)}"
+            )
             
-            # Check if process had errors
-            if process.returncode != 0:
-                error_message = stderr.decode('utf-8', errors='replace') if stderr else "Unknown runtime error"
-                actual_output = stdout.decode('utf-8', errors='replace') if stdout else ""
-                return ExecutionResult(
-                    case_id=case_id,
-                    status="RUNTIME_ERROR",
-                    time_ms=execution_time,
-                    memory_mb=0,
-                    output=actual_output,
-                    expected_output=expected_output,
-                    error_message=error_message
-                )
+            # Filter out debug output from stderr
+            actual_error = "\n".join([
+                line for line in error_output.split("\n")
+                if not line.strip().startswith("Files in") 
+                and not line.strip().startswith("---Running command---")
+                and not line.strip().startswith("total")
+                and not line.strip().startswith("drwx")
+                and line.strip()
+            ])
             
-            # Get actual output
-            actual_output = stdout.decode('utf-8', errors='replace').strip()
-            
-            # Normalize outputs for comparison (strip whitespace, normalize line endings)
+            # Normalize outputs for comparison
             actual_normalized = self._normalize_output(actual_output)
             expected_normalized = self._normalize_output(expected_output)
             
-            # Compare outputs
-            if actual_normalized == expected_normalized:
-                status = "ACCEPTED"
-            else:
-                status = "WRONG_ANSWER"
-                error_message = f"Expected: '{expected_output}', Got: '{actual_output}'"
-            
-            # Check time limit
+            # Determine status
             if execution_time > time_limit:
                 status = "TIME_LIMIT_EXCEEDED"
                 error_message = f"Execution exceeded time limit of {time_limit}ms"
+            elif exit_code != 0:
+                status = "RUNTIME_ERROR"
+                error_message = actual_error or "Runtime error occurred"
+            elif actual_normalized == expected_normalized:
+                status = "ACCEPTED"
+                error_message = ""
+            else:
+                status = "WRONG_ANSWER"
+                error_message = "Output does not match expected result"
+                logger.debug(
+                    f"[PYTHON_EXEC] Output mismatch for case {case_id} - "
+                    f"Expected: {repr(expected_normalized)}, Got: {repr(actual_normalized)}"
+                )
             
             return ExecutionResult(
                 case_id=case_id,
                 status=status,
                 time_ms=execution_time,
-                memory_mb=0,  # Memory tracking not implemented in basic version
+                memory_mb=docker_result.get("memory_used_mb", 0),
                 output=actual_output,
                 expected_output=expected_output,
                 error_message=error_message
             )
             
         except Exception as e:
-            execution_time = int((time.time() - start_time) * 1000)
             logger.error(f"Error executing test case {case_id}: {str(e)}", exc_info=True)
             return ExecutionResult(
                 case_id=case_id,
                 status="RUNTIME_ERROR",
-                time_ms=execution_time,
+                time_ms=0,
                 memory_mb=0,
-                output=actual_output,
-                expected_output=expected_output,
                 error_message=f"Execution error: {str(e)}"
             )
     
-    def _indent_code(self, code: str) -> str:
-        """Indent code by 4 spaces for wrapping"""
-        if not code:
-            return ""
-        lines = code.split('\n')
-        # Indent each non-empty line, preserve empty lines
-        indented = []
-        for line in lines:
-            if line.strip():
-                indented.append('    ' + line)
-            else:
-                indented.append(line)
-        return '\n'.join(indented)
-    
     def _normalize_output(self, output: str) -> str:
-        """Normalize output for comparison (strip, normalize line endings)"""
-        if not output:
-            return ""
-        # Strip leading/trailing whitespace and normalize line endings
-        normalized = output.strip().replace('\r\n', '\n').replace('\r', '\n')
-        # Remove trailing newlines for comparison
-        return normalized.rstrip('\n')
+        """Normalize output for comparison (trim, handle line endings)"""
+        return output.strip().replace('\r\n', '\n').replace('\r', '\n')
     
     def _create_error_response(self, error_message: str) -> Dict[str, Any]:
         """Create an error response"""
@@ -272,13 +201,10 @@ finally:
         if not is_valid:
             return is_valid, error
         
-        # Additional Python-specific validation
-        dangerous_imports = ["os", "sys", "subprocess", "socket"]
+        # Python-specific validation
+        dangerous_imports = ["os", "sys", "subprocess", "socket", "shutil"]
         for imp in dangerous_imports:
-            if f"import {imp}" in code:
-                logger.warning(f"Dangerous import detected: {imp}")
-                # In production, this should reject the code
-                # For stub, we just log it
+            if f"import {imp}" in code or f"from {imp}" in code:
+                return False, f"Dangerous import detected: {imp}. This is not allowed for security reasons."
         
         return True, ""
-

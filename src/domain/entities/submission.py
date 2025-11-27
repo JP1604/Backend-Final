@@ -14,10 +14,10 @@ class SubmissionStatus(str, Enum):
 
 
 class ProgrammingLanguage(str, Enum):
-    PYTHON = "python"
-    NODEJS = "nodejs"
-    CPP = "cpp"
-    JAVA = "java"
+    PYTHON = "PYTHON"
+    NODEJS = "NODEJS"
+    CPP = "CPP"
+    JAVA = "JAVA"
 
 
 class TestCaseResult:
@@ -27,13 +27,17 @@ class TestCaseResult:
         status: SubmissionStatus,
         time_ms: int,
         memory_mb: Optional[int] = None,
-        error_message: Optional[str] = None
+        error_message: Optional[str] = None,
+        output: Optional[str] = None,
+        expected_output: Optional[str] = None
     ):
         self.case_id = case_id
         self.status = status
         self.time_ms = time_ms
         self.memory_mb = memory_mb
         self.error_message = error_message
+        self.output = output
+        self.expected_output = expected_output
 
 
 class Submission:

@@ -82,10 +82,14 @@ class ChallengeRepositoryImpl(ChallengeRepository):
 
     def _to_domain(self, challenge_model: ChallengeModel) -> Challenge:
         from domain.entities.submission import ProgrammingLanguage
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # Handle language conversion - it can be an enum or a string
         if challenge_model.language is None:
             language = ProgrammingLanguage.PYTHON  # Default
         elif isinstance(challenge_model.language, str):
+            logger.info(f"[CHALLENGE_CONVERSION] Challenge {challenge_model.id}: language from DB is string: '{challenge_model.language}'")
             # Convert lowercase to uppercase for enum matching
             lang_upper = challenge_model.language.upper()
             try:
@@ -101,7 +105,9 @@ class ChallengeRepositoryImpl(ChallengeRepository):
                     'c++': ProgrammingLanguage.CPP
                 }
                 language = lang_map.get(challenge_model.language.lower(), ProgrammingLanguage.PYTHON)
+            logger.info(f"[CHALLENGE_CONVERSION] Challenge {challenge_model.id}: converted to enum: {language}")
         elif hasattr(challenge_model.language, 'value'):
+            logger.info(f"[CHALLENGE_CONVERSION] Challenge {challenge_model.id}: language from DB is enum with value: '{challenge_model.language.value}'")
             lang_value = challenge_model.language.value
             if isinstance(lang_value, str):
                 lang_upper = lang_value.upper()
@@ -109,6 +115,7 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             else:
                 language = ProgrammingLanguage(challenge_model.language.value)
         else:
+            logger.info(f"[CHALLENGE_CONVERSION] Challenge {challenge_model.id}: language from DB is other type: {type(challenge_model.language)}, value: {challenge_model.language}")
             language = ProgrammingLanguage(challenge_model.language)
         
         return Challenge(

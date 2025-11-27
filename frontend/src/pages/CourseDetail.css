@@ -9,6 +9,7 @@
 .btn-back {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   background: var(--bg-tertiary);
@@ -19,6 +20,7 @@
   margin-bottom: 1.5rem;
   transition: var(--transition);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .btn-back:hover {
@@ -250,6 +252,7 @@
 .btn-add {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -261,6 +264,7 @@
   font-weight: 600;
   transition: var(--transition);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  white-space: nowrap;
 }
 
 .btn-edit:hover,
@@ -300,6 +304,12 @@
   max-width: 900px;
 }
 
+/* AI Assistant integration styles */
+.ai-assistant-toggle {
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -316,17 +326,24 @@
   font-size: 1.5rem;
 }
 
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .btn-close {
   background: none;
   border: none;
   cursor: pointer;
   color: var(--text-secondary);
   padding: 0.5rem;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-md);
   transition: var(--transition);
+  flex-shrink: 0;
 }
 
 .btn-close:hover {
@@ -387,6 +404,10 @@
 }
 
 .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
@@ -397,6 +418,7 @@
   font-weight: 600;
   transition: var(--transition);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  white-space: nowrap;
 }
 
 .btn-primary:hover {
@@ -405,6 +427,10 @@
 }
 
 .btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   background: var(--bg-tertiary);
   color: var(--text-primary);
@@ -414,6 +440,7 @@
   font-size: 1rem;
   font-weight: 500;
   transition: var(--transition);
+  white-space: nowrap;
 }
 
 .btn-secondary:hover {
@@ -430,5 +457,20 @@
   .course-detail-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .modal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .modal-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .modal-large {
+    max-width: 95%;
   }
 }

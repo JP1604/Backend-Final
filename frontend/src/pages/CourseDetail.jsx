@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { coursesAPI, challengesAPI, usersAPI } from '../services/api';
 import { ArrowLeft, Users, Code2, AlertCircle, Loader, Plus, UserPlus, Edit2, X } from 'lucide-react';
+import AIAssistant from '../components/AIAssistant';
 import './CourseDetail.css';
 
 const CourseDetail = () => {
@@ -209,6 +210,23 @@ const CourseDetail = () => {
     }
   };
 
+  const handleAISuggestion = (suggestion) => {
+    console.log('AI Suggestion received:', suggestion);
+    
+    // Map AI suggestion to newChallenge state
+    setNewChallenge({
+      title: suggestion.title || '',
+      description: suggestion.description || '',
+      difficulty: suggestion.difficulty?.toLowerCase() || 'easy',
+      tags: Array.isArray(suggestion.tags) ? suggestion.tags.join(', ') : '',
+      time_limit: suggestion.limits?.timeLimitMs || 1000,
+      memory_limit: suggestion.limits?.memoryLimitMb || 256,
+      language: newChallenge.language, // Keep current language selection
+    });
+    
+    setError('');
+  };
+
   if (!user) return null;
 
   return (
@@ -331,12 +349,18 @@ const CourseDetail = () => {
           {/* Create Challenge Modal */}
           {showCreateChallenge && (
             <div className="modal-overlay" onClick={() => setShowCreateChallenge(false)}>
-              <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-content modal-large" onClick={(e) => e.stopPropagation()}>
                 <div className="modal-header">
                   <h3>Create Challenge</h3>
-                  <button className="btn-close" onClick={() => setShowCreateChallenge(false)}>
-                    <X size={20} />
-                  </button>
+                  <div className="modal-header-actions">
+                    <AIAssistant 
+                      onApplySuggestion={handleAISuggestion}
+                      currentChallenge={newChallenge}
+                    />
+                    <button className="btn-close" onClick={() => setShowCreateChallenge(false)}>
+                      <X size={20} />
+                    </button>
+                  </div>
                 </div>
                 <form onSubmit={handleCreateChallenge}>
                   <div className="form-group">
