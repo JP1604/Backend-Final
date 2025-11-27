@@ -37,5 +37,6 @@ class ChallengeResponse(BaseModel):
     status: str
     created_by: str
     course_id: Optional[str]
+    course_name: Optional[str] = None
     created_at: str
     updated_at: str

@@ -74,7 +74,12 @@ const Navbar = () => {
               </div>
 
               <div className="nav-actions">
-                <div className="user-info">
+                <Link 
+                  to="/profile" 
+                  className="user-info"
+                  onClick={() => setMobileMenuOpen(false)}
+                  title="View Profile"
+                >
                   <div className="user-avatar">
                     {user?.first_name ? user.first_name.charAt(0).toUpperCase() : <User size={18} />}
                   </div>
@@ -82,14 +87,6 @@ const Navbar = () => {
                     <div className="user-name">{user?.first_name || 'User'}</div>
                     <div className="user-email">{user?.email}</div>
                   </div>
-                </div>
-                <Link 
-                  to="/profile" 
-                  className="btn-profile"
-                  onClick={() => setMobileMenuOpen(false)}
-                  title="Profile"
-                >
-                  <User size={18} />
                 </Link>
                 <button onClick={handleLogout} className="btn-logout">
                   <LogOut size={18} />

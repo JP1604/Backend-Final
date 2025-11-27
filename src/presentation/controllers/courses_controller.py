@@ -572,7 +572,7 @@ async def list_course_challenges(
         
         # Map to response format
         from presentation.controllers.challenges_controller import _map_challenge_to_response
-        return [_map_challenge_to_response(c) for c in challenges]
+        return [_map_challenge_to_response(c, db) for c in challenges]
         
     except HTTPException:
         raise

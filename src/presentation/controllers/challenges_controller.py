@@ -38,8 +38,18 @@ def _get_challenge_repository(db: Session) -> ChallengeRepositoryImpl:
     return ChallengeRepositoryImpl(db)
 
 
-def _map_challenge_to_response(challenge) -> ChallengeResponse:
+def _map_challenge_to_response(challenge, db: Optional[Session] = None) -> ChallengeResponse:
     """Convierte una entidad Challenge a DTO de respuesta."""
+    course_name = None
+    if challenge.course_id and db:
+        try:
+            from infrastructure.persistence.models import CourseModel
+            course = db.query(CourseModel).filter(CourseModel.id == challenge.course_id).first()
+            if course:
+                course_name = course.name
+        except Exception as e:
+            logger.warning(f"Error fetching course name for challenge {challenge.id}: {str(e)}")
+    
     return ChallengeResponse(
         id=challenge.id,
         title=challenge.title,
@@ -51,6 +61,7 @@ def _map_challenge_to_response(challenge) -> ChallengeResponse:
         status=challenge.status,
         created_by=challenge.created_by,
         course_id=challenge.course_id,
+        course_name=course_name,
         created_at=challenge.created_at.isoformat(),
         updated_at=challenge.updated_at.isoformat()
     )
@@ -108,7 +119,7 @@ async def create_challenge(
             except Exception as e:
                 logger.warning(f"[AUTO_ASSIGN_FAILED] Could not auto-assign challenge to course: {str(e)}")
         
-        return _map_challenge_to_response(challenge)
+        return _map_challenge_to_response(challenge, db)
         
     except ValueError as e:
         raise HTTPException(
@@ -156,7 +167,7 @@ async def get_challenges(
             difficulty=difficulty
         )
         
-        return [_map_challenge_to_response(challenge) for challenge in challenges]
+        return [_map_challenge_to_response(challenge, db) for challenge in challenges]
         
     except Exception as e:
         print(f"Error en get_challenges: {str(e)}")
@@ -343,7 +354,7 @@ async def get_challenge(
                 detail="Challenge not found or access denied"
             )
         
-        return _map_challenge_to_response(challenge)
+        return _map_challenge_to_response(challenge, db)
         
     except HTTPException:
         raise

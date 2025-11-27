@@ -68,7 +68,7 @@
   align-items: center;
   gap: 2rem;
   flex: 1;
-  justify-content: space-between;
+  justify-content: center;
   margin-left: 3rem;
 }
 
@@ -76,6 +76,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  justify-content: center;
 }
 
 .nav-link {
@@ -128,6 +129,15 @@
   background: var(--bg-tertiary);
   border-radius: var(--radius-full);
   border: 1px solid var(--border-color);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.user-info:hover {
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  transform: translateY(-2px);
 }
 
 .user-avatar {
@@ -186,26 +196,6 @@
   color: white;
 }
 
-.btn-profile {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-full);
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--primary);
-  border: 1px solid var(--primary);
-  cursor: pointer;
-  transition: var(--transition-fast);
-  text-decoration: none;
-}
-
-.btn-profile:hover {
-  background: var(--primary);
-  color: white;
-  transform: scale(1.05);
-}
 
 .btn-primary, .btn-secondary {
   display: inline-flex;
@@ -289,6 +279,7 @@
   .user-info {
     width: 100%;
     justify-content: center;
+    text-decoration: none;
   }
 
   .btn-logout,

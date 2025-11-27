@@ -30,7 +30,7 @@ const Dashboard = () => {
       <div className="dashboard-content">
         <div className="dashboard-header">
           <div className="header-welcome">
-            <h1>Welcome, {user.first_name || user.email || 'User'}! 👋</h1>
+            <h1>Welcome, {user.first_name || user.email || 'User'}!</h1>
             <p>Ready to solve some coding challenges?</p>
           </div>
           <button onClick={handleLogout} className="btn-logout">
