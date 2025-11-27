@@ -52,7 +52,14 @@ class RedisQueueService:
             "nodejs": self.NODEJS_QUEUE,
             "cpp": self.CPP_QUEUE,
         }
-        return queue_map.get(language.lower(), self.PYTHON_QUEUE)
+        # Convert to lowercase for lookup (language might be uppercase)
+        language_lower = language.lower()
+        queue_name = queue_map.get(language_lower, self.PYTHON_QUEUE)
+        if language_lower not in queue_map:
+            logger.warning(f"Unknown language '{language}' (normalized: '{language_lower}'), defaulting to Python queue")
+        else:
+            logger.info(f"[QUEUE_ROUTING] Language '{language}' (normalized: '{language_lower}') -> queue '{queue_name}'")
+        return queue_name
     
     async def enqueue_submission(
         self,
@@ -82,14 +89,16 @@ class RedisQueueService:
                 "submission_id": submission_id,
                 "challenge_id": challenge_id,
                 "user_id": user_id,
-                "language": language.lower(),
+                "language": language.upper(),
                 "code": code,
                 "test_cases": test_cases,
                 "enqueued_at": datetime.utcnow().isoformat(),
                 "status": "QUEUED"
             }
             
+            logger.info(f"[ENQUEUE_START] Submission {submission_id} - received language: '{language}' (type: {type(language).__name__})")
             queue_name = self._get_queue_name(language)
+            logger.info(f"[ENQUEUE_ROUTE] Submission {submission_id} - routing to queue: '{queue_name}'")
             
             # Add to queue (lpush is synchronous)
             self.redis_client.lpush(queue_name, json.dumps(job_data))
@@ -97,7 +106,7 @@ class RedisQueueService:
             # Set initial status (async method)
             await self.set_submission_status(submission_id, "QUEUED")
             
-            logger.info(f"Submission {submission_id} enqueued to {queue_name}")
+            logger.info(f"[ENQUEUE_COMPLETE] Submission {submission_id} enqueued to {queue_name} (input language: {language}, stored language: {job_data.get('language')})")
             return True
             
         except Exception as e:

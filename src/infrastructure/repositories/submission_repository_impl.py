@@ -101,7 +101,9 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             "status": case.status,
             "time_ms": case.time_ms,
             "memory_mb": case.memory_mb,
-            "error_message": case.error_message
+            "error_message": case.error_message,
+            "output": case.output,
+            "expected_output": case.expected_output
         }
 
     def _dict_to_case(self, case_data: dict) -> TestCaseResult:
@@ -110,5 +112,7 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             status=case_data["status"],
             time_ms=case_data["time_ms"],
             memory_mb=case_data.get("memory_mb"),
-            error_message=case_data.get("error_message")
+            error_message=case_data.get("error_message"),
+            output=case_data.get("output"),
+            expected_output=case_data.get("expected_output")
         )

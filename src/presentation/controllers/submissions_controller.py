@@ -64,11 +64,13 @@ def _map_to_response(submission, challenge_title: str = None) -> SubmissionRespo
         time_ms_total=submission.time_ms_total,
         cases=[
             TestCaseResultResponse(
-                case_id=case.case_id,
+                case_id=str(case.case_id),  # Convert to string as expected by response DTO
                 status=case.status,
                 time_ms=case.time_ms,
                 memory_mb=case.memory_mb,
-                error_message=case.error_message
+                error_message=case.error_message,
+                actual_output=case.output,
+                expected_output=case.expected_output
             )
             for case in submission.cases
         ],

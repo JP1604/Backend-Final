@@ -76,18 +76,4 @@ class SubmitExamAttemptUseCase:
         # Finalize attempt
         finalized = await self.exam_repository.finalize_attempt(attempt_id, int(percent), passed)
 
-        # Schedule leaderboard recalculation (best-effort)
-        try:
-            import asyncio
-            from infrastructure.repositories.user_repository_impl import UserRepositoryImpl
-            from application.use_cases.leaderboards.recalculate_exam_leaderboard_use_case import RecalculateExamLeaderboardUseCase
-
-            db = self.db
-            user_repo = UserRepositoryImpl(db)
-            recalc_uc = RecalculateExamLeaderboardUseCase(self.exam_repository, user_repo)
-            asyncio.create_task(recalc_uc.execute(exam_id))
-            logger.info(f"Scheduled exam leaderboard recalculation for exam {exam_id}")
-        except Exception:
-            logger.debug("Failed to schedule exam leaderboard recalculation")
-
         return finalized

@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS challenges (
     time_limit INTEGER NOT NULL,
     memory_limit INTEGER NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
-    language VARCHAR(20) NOT NULL DEFAULT 'python',
+    language VARCHAR(20) NOT NULL DEFAULT 'PYTHON',
     created_by UUID NOT NULL REFERENCES users(id),
     course_id UUID,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
