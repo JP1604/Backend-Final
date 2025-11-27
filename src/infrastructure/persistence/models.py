@@ -108,7 +108,8 @@ class CourseModel(Base):
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     teacher_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False, index=True)
-    status = Column(SQLEnum(CourseStatus), nullable=False, default=CourseStatus.DRAFT)
+    # Use String instead of Enum to store the enum value (lowercase string)
+    status = Column(String(20), nullable=False, default=CourseStatus.DRAFT.value)
     start_date = Column(DateTime(timezone=True), nullable=True)
     end_date = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -122,7 +123,7 @@ class ExamModel(Base):
     course_id = Column(UUID(as_uuid=True), ForeignKey('courses.id'), nullable=False, index=True)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    status = Column(SQLEnum(ExamStatus), nullable=False, default=ExamStatus.DRAFT)
+    status = Column(String(20), nullable=False, default=ExamStatus.DRAFT.value)
     
     # Time constraints
     start_time = Column(DateTime(timezone=True), nullable=False)

@@ -4,6 +4,40 @@
   padding: 2rem;
 }
 
+.challenge-info {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border-left: 4px solid #007bff;
+}
+
+.challenge-description {
+  color: #333;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+  white-space: pre-wrap;
+}
+
+.challenge-constraints {
+  display: flex;
+  gap: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.challenge-constraints span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.submission-time-ms {
+  color: #999;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
 .btn-back {
   display: flex;
   align-items: center;
@@ -223,6 +257,20 @@
   gap: 0.5rem;
   margin-bottom: 0.75rem;
   flex-wrap: wrap;
+}
+
+.submission-header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.challenge-title {
+  margin: 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
 }
 
 .status-badge {

@@ -7,7 +7,12 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Challenges from './pages/Challenges';
 import Submissions from './pages/Submissions';
+import MySubmissions from './pages/MySubmissions';
 import Profile from './pages/Profile';
+import Courses from './pages/Courses';
+import CourseDetail from './pages/CourseDetail';
+import Exams from './pages/Exams';
+import ChallengeDetail from './pages/ChallengeDetail';
 
 function App() {
   return (
@@ -41,7 +46,7 @@ function App() {
               path="/submissions"
               element={
                 <ProtectedRoute>
-                  <Submissions />
+                  <MySubmissions />
                 </ProtectedRoute>
               }
             />
@@ -58,6 +63,46 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courses"
+              element={
+                <ProtectedRoute>
+                  <Courses />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/courses/:courseId"
+              element={
+                <ProtectedRoute>
+                  <CourseDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/challenges/:id"
+              element={
+                <ProtectedRoute>
+                  <ChallengeDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exams"
+              element={
+                <ProtectedRoute>
+                  <Exams />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exams/course/:courseId"
+              element={
+                <ProtectedRoute>
+                  <Exams />
                 </ProtectedRoute>
               }
             />

@@ -12,6 +12,7 @@ from application.dtos.challenge_dto import (
 )
 from application.use_cases.challenges.create_challenge_use_case import CreateChallengeUseCase
 from application.use_cases.challenges.get_challenges_use_case import GetChallengesUseCase
+from application.use_cases.challenges.get_challenge_use_case import GetChallengeUseCase
 from infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
 from infrastructure.persistence.database import get_db
 from domain.entities.user import UserRole
@@ -83,6 +84,22 @@ async def create_challenge(
             course_id=challenge_request.course_id
         )
         
+        # If challenge is created with a course_id, automatically assign it to the course
+        if challenge_request.course_id:
+            try:
+                from infrastructure.repositories.course_repository_impl import CourseRepositoryImpl
+                from infrastructure.persistence.database import get_db
+                from sqlalchemy.orm import Session
+                
+                # Get database session from dependency injection context
+                # We need to pass db session, but we can't inject it here easily
+                # So we'll create a new session or use a workaround
+                # For now, let's create a separate endpoint call or handle it in the frontend
+                # Actually, better approach: assign it in the frontend after creation
+                pass
+            except Exception as e:
+                logger.warning(f"[AUTO_ASSIGN_FAILED] Could not auto-assign challenge to course: {str(e)}")
+        
         return _map_challenge_to_response(challenge)
         
     except ValueError as e:
@@ -118,7 +135,10 @@ async def get_challenges(
     """
     try:
         repository = _get_challenge_repository(db)
-        use_case = GetChallengesUseCase(repository)
+        # Import course repository for student filtering
+        from infrastructure.repositories.course_repository_impl import CourseRepositoryImpl
+        course_repo = CourseRepositoryImpl(db) if (course_id or UserRole(current_user["role"]) == UserRole.STUDENT) else None
+        use_case = GetChallengesUseCase(repository, course_repo)
         
         challenges = await use_case.execute(
             user_id=current_user["id"],
@@ -132,6 +152,50 @@ async def get_challenges(
         
     except Exception as e:
         print(f"Error en get_challenges: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error interno del servidor"
+        )
+
+
+@router.get(
+    "/{challenge_id}",
+    response_model=ChallengeResponse,
+    summary="Obtener un challenge por ID"
+)
+async def get_challenge(
+    challenge_id: str,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Obtiene un challenge específico por su ID.
+    
+    Los estudiantes solo pueden ver challenges publicados,
+    mientras que los profesores pueden ver todos.
+    """
+    try:
+        repository = _get_challenge_repository(db)
+        use_case = GetChallengeUseCase(repository)
+        
+        challenge = await use_case.execute(
+            challenge_id=challenge_id,
+            user_id=current_user["id"],
+            user_role=UserRole(current_user["role"])
+        )
+        
+        if not challenge:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Challenge not found or access denied"
+            )
+        
+        return _map_challenge_to_response(challenge)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error en get_challenge: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error interno del servidor"

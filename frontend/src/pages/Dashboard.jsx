@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Code2, BookOpen, User, LogOut } from 'lucide-react';
+import { Code2, BookOpen, User, LogOut, GraduationCap, FileText } from 'lucide-react';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -62,6 +62,30 @@ const Dashboard = () => {
             <h2>My Submissions</h2>
             <p>View your code submissions and scores</p>
             <button className="btn-card">View Submissions →</button>
+          </div>
+
+          <div 
+            className="dashboard-card"
+            onClick={() => navigate('/courses')}
+          >
+            <div className="card-icon">
+              <GraduationCap size={48} />
+            </div>
+            <h2>Courses</h2>
+            <p>View and manage your courses</p>
+            <button className="btn-card">View Courses →</button>
+          </div>
+
+          <div 
+            className="dashboard-card"
+            onClick={() => navigate('/exams')}
+          >
+            <div className="card-icon">
+              <FileText size={48} />
+            </div>
+            <h2>Exams</h2>
+            <p>Take exams and view results</p>
+            <button className="btn-card">View Exams →</button>
           </div>
 
           <div 

@@ -50,12 +50,13 @@ def _get_queue_service() -> RedisQueueService:
     return RedisQueueService()
 
 
-def _map_to_response(submission) -> SubmissionResponse:
+def _map_to_response(submission, challenge_title: str = None) -> SubmissionResponse:
     """Convierte una entidad Submission a DTO de respuesta."""
     return SubmissionResponse(
         id=submission.id,
         user_id=submission.user_id,
         challenge_id=submission.challenge_id,
+        challenge_title=challenge_title,
         language=submission.language,
         code=submission.code,
         status=submission.status,
@@ -568,7 +569,20 @@ async def get_my_submissions(
         # Sort by most recent first
         submissions = sorted(submissions, key=lambda x: x.created_at, reverse=True)
         
-        return [_map_to_response(s) for s in submissions]
+        # Get challenge titles for each submission
+        from infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
+        challenge_repo = ChallengeRepositoryImpl(db)
+        challenge_titles = {}
+        
+        for submission in submissions:
+            if str(submission.challenge_id) not in challenge_titles:
+                challenge = await challenge_repo.find_by_id(str(submission.challenge_id))
+                challenge_titles[str(submission.challenge_id)] = challenge.title if challenge else None
+        
+        return [
+            _map_to_response(s, challenge_titles.get(str(s.challenge_id)))
+            for s in submissions
+        ]
         
     except Exception as e:
         print(f"Error getting my submissions: {str(e)}")

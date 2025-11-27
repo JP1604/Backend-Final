@@ -1,6 +1,10 @@
 from typing import List, Optional
+import logging
 from sqlalchemy.orm import Session
 from infrastructure.persistence.models import ExamAttemptModel, ExamModel
+from domain.entities.exam import ExamStatus
+
+logger = logging.getLogger(__name__)
 from domain.entities.exam import Exam, ExamStatus
 
 
@@ -84,6 +88,14 @@ class ExamRepositoryImpl:
         r = self.db.query(ExamModel).filter(ExamModel.id == exam_id).first()
         if not r:
             return None
+        # Convert status string to enum value if needed
+        status_value = r.status
+        if isinstance(status_value, str):
+            try:
+                status_value = ExamStatus(status_value.lower())
+            except ValueError:
+                status_value = ExamStatus.DRAFT
+        
         return {
             "id": str(r.id),
             "course_id": str(r.course_id),
@@ -94,7 +106,7 @@ class ExamRepositoryImpl:
             "duration_minutes": r.duration_minutes,
             "max_attempts": r.max_attempts,
             "passing_score": r.passing_score,
-            "status": r.status,
+            "status": status_value.value if isinstance(status_value, ExamStatus) else status_value,
             "created_at": r.created_at,
             "updated_at": r.updated_at,
             "created_by": str(r.created_by)
@@ -126,7 +138,8 @@ class ExamRepositoryImpl:
         
         model.title = exam.title
         model.description = exam.description
-        model.status = exam.status
+        # Convert enum to its string value for storage
+        model.status = exam.status.value if isinstance(exam.status, ExamStatus) else exam.status
         model.start_time = exam.start_time
         model.end_time = exam.end_time
         model.duration_minutes = exam.duration_minutes
@@ -145,12 +158,25 @@ class ExamRepositoryImpl:
     
     def _to_entity(self, model: ExamModel) -> Exam:
         """Convert database model to domain entity"""
+        # Handle status conversion - status is stored as string in DB
+        status_value = model.status
+        if isinstance(status_value, ExamStatus):
+            status_value = status_value
+        elif isinstance(status_value, str):
+            # If it's a string, try to convert it to the enum
+            try:
+                status_value = ExamStatus(status_value.lower())
+            except ValueError:
+                # If conversion fails, default to DRAFT
+                logger.warning(f"[EXAM_STATUS_CONVERSION] Invalid status '{status_value}', defaulting to DRAFT")
+                status_value = ExamStatus.DRAFT
+        
         return Exam(
             id=str(model.id),
             course_id=str(model.course_id),
             title=model.title,
             description=model.description or "",
-            status=ExamStatus(model.status),
+            status=status_value,
             start_time=model.start_time,
             end_time=model.end_time,
             duration_minutes=model.duration_minutes,
@@ -163,12 +189,15 @@ class ExamRepositoryImpl:
     
     def _to_model(self, entity: Exam) -> ExamModel:
         """Convert domain entity to database model"""
+        # Convert enum to its string value for storage
+        status_value = entity.status.value if isinstance(entity.status, ExamStatus) else entity.status
+        
         return ExamModel(
             id=entity.id,
             course_id=entity.course_id,
             title=entity.title,
             description=entity.description,
-            status=entity.status,
+            status=status_value,
             start_time=entity.start_time,
             end_time=entity.end_time,
             duration_minutes=entity.duration_minutes,

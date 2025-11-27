@@ -21,8 +21,10 @@ from application.dtos.course_dto import (
     ExamScoreResponse
 )
 from application.use_cases.courses.create_course_use_case import CreateCourseUseCase
+from application.use_cases.courses.update_course_use_case import UpdateCourseUseCase
 from application.use_cases.courses.enroll_student_use_case import EnrollStudentUseCase
 from application.use_cases.courses.assign_challenge_use_case import AssignChallengeUseCase
+from application.dtos.challenge_dto import ChallengeResponse
 from infrastructure.repositories.course_repository_impl import CourseRepositoryImpl
 from infrastructure.repositories.user_repository_impl import UserRepositoryImpl
 from infrastructure.repositories.challenge_repository_impl import ChallengeRepositoryImpl
@@ -253,6 +255,70 @@ async def get_course(
         )
 
 
+@router.put(
+    "/{course_id}",
+    response_model=CourseResponse,
+    summary="Update a course"
+)
+async def update_course(
+    course_id: str,
+    course_request: UpdateCourseRequest,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Update an existing course (Course teacher/Admin only).
+    
+    - **name**: Course name (optional)
+    - **description**: Course description (optional)
+    - **start_date**: Course start date (optional)
+    - **end_date**: Course end date (optional)
+    - **status**: Course status (optional)
+    """
+    logger.info(
+        f"[UPDATE_COURSE_REQUEST] User {current_user['email']} updating course: {course_id}"
+    )
+    
+    try:
+        course_repo = _build_course_repository(db)
+        use_case = UpdateCourseUseCase(course_repo)
+        
+        course = await use_case.execute(
+            course_id=course_id,
+            name=course_request.name,
+            description=course_request.description,
+            start_date=course_request.start_date,
+            end_date=course_request.end_date,
+            status=course_request.status,
+            requester_id=current_user["id"],
+            requester_role=UserRole(current_user["role"])
+        )
+        
+        logger.info(f"[COURSE_UPDATED] Course {course.id} updated by {current_user['id']}")
+        
+        return CourseResponse(
+            id=course.id,
+            name=course.name,
+            description=course.description,
+            teacher_id=course.teacher_id,
+            status=course.status,
+            start_date=course.start_date,
+            end_date=course.end_date,
+            created_at=course.created_at,
+            updated_at=course.updated_at
+        )
+        
+    except ValueError as e:
+        logger.warning(f"[UPDATE_COURSE_ERROR] Validation error: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(f"[UPDATE_COURSE_ERROR] Unexpected error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error updating course"
+        )
+
+
 @router.post(
     "/{course_id}/students",
     response_model=StudentEnrollmentResponse,
@@ -443,7 +509,7 @@ async def list_course_students(
 
 @router.get(
     "/{course_id}/challenges",
-    response_model=List[str],
+    response_model=List[ChallengeResponse],
     summary="List challenges assigned to a course"
 )
 async def list_course_challenges(
@@ -451,11 +517,15 @@ async def list_course_challenges(
     db: Session = Depends(get_db),
     current_user: dict = Depends(get_current_user)
 ):
-    """Get list of challenge IDs assigned to a course."""
+    """Get list of challenges assigned to a course."""
+    from application.dtos.challenge_dto import ChallengeResponse
+    from presentation.controllers.challenges_controller import _map_challenge_to_response
+    
     logger.info(f"[LIST_CHALLENGES] User {current_user['email']} listing challenges in course {course_id}")
     
     try:
         course_repo = _build_course_repository(db)
+        challenge_repo = _build_challenge_repository(db)
         course = await course_repo.find_by_id(course_id)
         
         if not course:
@@ -471,10 +541,33 @@ async def list_course_challenges(
                     detail="You are not enrolled in this course"
                 )
         
-        challenges = await course_repo.get_challenges(course_id)
+        # Get challenge IDs assigned to course from course_challenges table
+        challenge_ids = await course_repo.get_challenges(course_id)
+        
+        logger.debug(f"[LIST_CHALLENGES] Found {len(challenge_ids)} challenge IDs assigned to course {course_id}")
+        
+        # Get full challenge objects
+        challenges = []
+        for challenge_id in challenge_ids:
+            try:
+                challenge = await challenge_repo.find_by_id(challenge_id)
+                if challenge:
+                    # Check if user can view this challenge
+                    if challenge.can_be_viewed_by(user_role):
+                        challenges.append(challenge)
+                    else:
+                        logger.debug(f"[LIST_CHALLENGES] Challenge {challenge_id} filtered out (permission check)")
+                else:
+                    logger.warning(f"[LIST_CHALLENGES] Challenge {challenge_id} not found in repository")
+            except Exception as e:
+                logger.warning(f"[LIST_CHALLENGES] Error loading challenge {challenge_id}: {str(e)}")
+                continue
+        
         logger.info(f"[CHALLENGES_LISTED] Returned {len(challenges)} challenges for course {course_id}")
         
-        return challenges
+        # Map to response format
+        from presentation.controllers.challenges_controller import _map_challenge_to_response
+        return [_map_challenge_to_response(c) for c in challenges]
         
     except HTTPException:
         raise

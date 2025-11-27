@@ -13,7 +13,7 @@ class CreateCourseRequest(BaseModel):
     description: Optional[str] = None
     start_date: Optional[datetime] = None
     end_date: Optional[datetime] = None
-    status: CourseStatus = CourseStatus.DRAFT
+    status: Optional[CourseStatus] = CourseStatus.DRAFT
 
 
 class UpdateCourseRequest(BaseModel):

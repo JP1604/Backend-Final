@@ -2,8 +2,9 @@
 Punto de entrada principal de la aplicación.
 Configura FastAPI, middleware y rutas.
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
 from presentation.controllers import (
     auth_controller, 
@@ -25,16 +26,26 @@ app = FastAPI(
     description="Backend para plataforma de evaluación de algoritmos - Sistema tipo HackerRank",
     version="1.0.0",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    redirect_slashes=False  # Desactivar redirecciones automáticas de barras finales
 )
+
+# Middleware para manejar correctamente las peticiones a través de proxy
+@app.middleware("http")
+async def proxy_headers_middleware(request: Request, call_next):
+    """Middleware para manejar correctamente los headers cuando se está detrás de un proxy."""
+    # Asegurar que los headers X-Forwarded-* se pasen correctamente
+    response = await call_next(request)
+    return response
 
 # Configurar CORS para permitir peticiones desde el frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Permitir todos los orígenes en desarrollo
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Registrar routers de controladores

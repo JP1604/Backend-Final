@@ -24,6 +24,7 @@ class SubmissionResponse(BaseModel):
     id: str
     user_id: str
     challenge_id: str
+    challenge_title: Optional[str] = None  # Challenge title for display
     language: ProgrammingLanguage
     code: str
     status: SubmissionStatus

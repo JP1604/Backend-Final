@@ -34,6 +34,10 @@ class SubmitSolutionUseCase:
         language: ProgrammingLanguage,
         code: str
     ) -> Submission:
+        # Only students can submit solutions
+        if user_role != UserRole.STUDENT:
+            raise ValueError("Only students can submit solutions to challenges")
+        
         # Validar que el challenge existe
         challenge = await self.challenge_repository.find_by_id(challenge_id)
         if not challenge:

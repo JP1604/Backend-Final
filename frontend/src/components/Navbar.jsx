@@ -9,7 +9,9 @@ import {
   FileCode,
   Settings,
   Menu,
-  X
+  X,
+  GraduationCap,
+  FileText
 } from 'lucide-react';
 import { useState } from 'react';
 import './Navbar.css';
@@ -63,6 +65,8 @@ const Navbar = () => {
               <div className="nav-links">
                 <NavLink to="/dashboard" icon={Home}>Dashboard</NavLink>
                 <NavLink to="/challenges" icon={Trophy}>Challenges</NavLink>
+                <NavLink to="/courses" icon={GraduationCap}>Courses</NavLink>
+                <NavLink to="/exams" icon={FileText}>Exams</NavLink>
                 <NavLink to="/submissions" icon={FileCode}>My Submissions</NavLink>
                 {isAdmin && (
                   <NavLink to="/admin" icon={Settings}>Admin</NavLink>

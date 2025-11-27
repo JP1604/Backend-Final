@@ -22,12 +22,25 @@ class CourseRepositoryImpl(CourseRepository):
     
     def _to_entity(self, model: CourseModel) -> Course:
         """Convert database model to domain entity"""
+        # Handle status conversion - status is stored as string in DB
+        status_value = model.status
+        if isinstance(status_value, CourseStatus):
+            status_value = status_value
+        elif isinstance(status_value, str):
+            # If it's a string, try to convert it to the enum
+            try:
+                status_value = CourseStatus(status_value.lower())
+            except ValueError:
+                # If conversion fails, default to DRAFT
+                logger.warning(f"[COURSE_STATUS_CONVERSION] Invalid status '{status_value}', defaulting to DRAFT")
+                status_value = CourseStatus.DRAFT
+        
         return Course(
             id=str(model.id),
             name=model.name,
             description=model.description,
             teacher_id=str(model.teacher_id),
-            status=model.status,
+            status=status_value,
             start_date=model.start_date,
             end_date=model.end_date,
             created_at=model.created_at,
@@ -36,12 +49,15 @@ class CourseRepositoryImpl(CourseRepository):
     
     def _to_model(self, entity: Course) -> CourseModel:
         """Convert domain entity to database model"""
+        # Convert enum to its string value for storage
+        status_value = entity.status.value if isinstance(entity.status, CourseStatus) else entity.status
+        
         return CourseModel(
             id=entity.id,
             name=entity.name,
             description=entity.description,
             teacher_id=entity.teacher_id,
-            status=entity.status,
+            status=status_value,
             start_date=entity.start_date,
             end_date=entity.end_date,
             created_at=entity.created_at,
@@ -105,7 +121,8 @@ class CourseRepositoryImpl(CourseRepository):
         # Update fields
         model.name = course.name
         model.description = course.description
-        model.status = course.status
+        # Convert enum to its string value for storage
+        model.status = course.status.value if isinstance(course.status, CourseStatus) else course.status
         model.start_date = course.start_date
         model.end_date = course.end_date
         model.teacher_id = course.teacher_id

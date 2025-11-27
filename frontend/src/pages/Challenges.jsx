@@ -34,7 +34,16 @@ const Challenges = () => {
         }
       } catch (err) {
         console.error('Error fetching challenges:', err);
-        setError(err.response?.data?.detail || 'Failed to load challenges');
+        if (err.code === 'ERR_NETWORK' || err.message?.includes('CORS')) {
+          setError('Error de conexión. Verifica que el backend esté ejecutándose y que CORS esté configurado correctamente.');
+        } else if (err.response?.status === 401) {
+          setError('No autorizado. Por favor, inicia sesión nuevamente.');
+          navigate('/login');
+        } else if (err.response?.status === 403) {
+          setError('No tienes permisos para ver los challenges.');
+        } else {
+          setError(err.response?.data?.detail || err.message || 'Error al cargar los challenges');
+        }
       } finally {
         setLoading(false);
       }
