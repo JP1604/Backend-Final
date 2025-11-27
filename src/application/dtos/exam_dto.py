@@ -79,3 +79,22 @@ class ExamResultsResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+class AssignChallengeToExamRequest(BaseModel):
+    """Request to assign a challenge to an exam"""
+    challenge_id: str
+    points: int = Field(default=100, ge=0, description="Points this challenge is worth")
+    order_index: int = Field(default=0, ge=0, description="Display order in the exam")
+
+
+class ExamChallengeResponse(BaseModel):
+    """Response with exam challenge details"""
+    challenge_id: str
+    title: str
+    description: str
+    difficulty: str
+    points: int
+    order_index: int
+    
+    class Config:
+        from_attributes = True

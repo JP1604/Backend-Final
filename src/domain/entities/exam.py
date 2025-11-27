@@ -3,7 +3,7 @@ Exam domain entity
 Represents an exam/evaluation with challenges, time limits, and attempt constraints
 """
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from enum import Enum
 
@@ -55,8 +55,12 @@ class Exam:
         if self.status != ExamStatus.ACTIVE:
             return False
         
-        now = datetime.utcnow()
-        return self.start_time <= now <= self.end_time
+        # Use timezone-aware datetime for comparison
+        now = datetime.now(timezone.utc)
+        # Ensure start_time and end_time are timezone-aware
+        start = self.start_time if self.start_time.tzinfo is not None else self.start_time.replace(tzinfo=timezone.utc)
+        end = self.end_time if self.end_time.tzinfo is not None else self.end_time.replace(tzinfo=timezone.utc)
+        return start <= now <= end
     
     def can_student_start(self, current_attempts: int) -> tuple[bool, str]:
         """
@@ -71,11 +75,16 @@ class Exam:
         if current_attempts >= self.max_attempts:
             return False, f"Maximum attempts ({self.max_attempts}) reached"
         
-        now = datetime.utcnow()
-        if now < self.start_time:
+        # Use timezone-aware datetime for comparison
+        now = datetime.now(timezone.utc)
+        # Ensure start_time and end_time are timezone-aware
+        start = self.start_time if self.start_time.tzinfo is not None else self.start_time.replace(tzinfo=timezone.utc)
+        end = self.end_time if self.end_time.tzinfo is not None else self.end_time.replace(tzinfo=timezone.utc)
+        
+        if now < start:
             return False, "Exam has not started yet"
         
-        if now > self.end_time:
+        if now > end:
             return False, "Exam has ended"
         
         return True, "OK"

@@ -12,6 +12,8 @@ import Profile from './pages/Profile';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
 import Exams from './pages/Exams';
+import ExamResults from './pages/ExamResults';
+import ExamAttempt from './pages/ExamAttempt';
 import ChallengeDetail from './pages/ChallengeDetail';
 
 function App() {
@@ -103,6 +105,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Exams />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exams/:examId/results"
+              element={
+                <ProtectedRoute>
+                  <ExamResults />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exams/:examId/attempt/:attemptId"
+              element={
+                <ProtectedRoute>
+                  <ExamAttempt />
                 </ProtectedRoute>
               }
             />
