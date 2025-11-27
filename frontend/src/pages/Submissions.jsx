@@ -80,13 +80,42 @@ const Submissions = () => {
       const response = await submissionsAPI.submit(challengeId, code, language);
       const data = response.data || response;
       
-      setSuccess('Code submitted successfully!');
+      setSuccess('Code submitted successfully! Processing...');
       setCode('');
+      
+      // Wait a bit for the submission to be processed
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Refresh submissions list for this challenge
       const submissionsResp = await submissionsAPI.getMy();
       const allSubmissions = Array.isArray(submissionsResp.data) ? submissionsResp.data : [];
       setMySubmissions(allSubmissions.filter(s => s.challenge_id === challengeId));
+      
+      // Poll for updated results
+      let attempts = 0;
+      const maxAttempts = 10;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        try {
+          const updatedResp = await submissionsAPI.getMy();
+          const updatedSubmissions = Array.isArray(updatedResp.data) ? updatedResp.data : [];
+          const challengeSubmissions = updatedSubmissions.filter(s => s.challenge_id === challengeId);
+          setMySubmissions(challengeSubmissions);
+          
+          // Check if latest submission is no longer QUEUED or RUNNING
+          const latest = challengeSubmissions[0];
+          if (latest && latest.status !== 'QUEUED' && latest.status !== 'RUNNING') {
+            clearInterval(pollInterval);
+            setSuccess('Submission processed! Check results below.');
+          }
+        } catch (err) {
+          console.error('Error polling submissions:', err);
+        }
+        
+        if (attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+        }
+      }, 2000);
     } catch (err) {
       console.error('Error submitting code:', err);
       setError(err.response?.data?.detail || 'Failed to submit code');

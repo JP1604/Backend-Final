@@ -45,7 +45,22 @@ class CreateChallengeUseCase:
             updated_at=datetime.utcnow()
         )
 
-        return await self.challenge_repository.save(challenge)
+        saved_challenge = await self.challenge_repository.save(challenge)
+        
+        # Crear un test case por defecto para que el challenge pueda ser usado
+        # Los profesores pueden agregar más test cases después
+        from domain.repositories.challenge_repository import TestCase
+        default_test_case = TestCase(
+            id=str(uuid.uuid4()),
+            challenge_id=saved_challenge.id,
+            input="1\n2",
+            expected_output="3",
+            is_hidden=False,
+            order_index=1
+        )
+        await self.challenge_repository.save_test_case(default_test_case)
+        
+        return saved_challenge
 
     def _can_create_challenge(self, user_role: UserRole) -> bool:
         return user_role in [UserRole.ADMIN, UserRole.PROFESSOR]

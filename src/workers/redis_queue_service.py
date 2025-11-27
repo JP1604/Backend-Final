@@ -91,10 +91,10 @@ class RedisQueueService:
             
             queue_name = self._get_queue_name(language)
             
-            # Add to queue
+            # Add to queue (lpush is synchronous)
             self.redis_client.lpush(queue_name, json.dumps(job_data))
             
-            # Set initial status
+            # Set initial status (async method)
             await self.set_submission_status(submission_id, "QUEUED")
             
             logger.info(f"Submission {submission_id} enqueued to {queue_name}")

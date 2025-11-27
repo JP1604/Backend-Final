@@ -92,11 +92,22 @@ class PythonExecutor(BaseExecutor):
         execution_time = random.randint(100, 500)
         await asyncio.sleep(execution_time / 1000.0)  # Simulate work
         
-        # Simulate different outcomes
-        outcome = random.choices(
-            ["ACCEPTED", "WRONG_ANSWER", "RUNTIME_ERROR", "TIME_LIMIT_EXCEEDED"],
-            weights=[80, 10, 5, 5]  # 80% success rate in stub
-        )[0]
+        # Simple validation: check if code contains basic patterns
+        # In a real implementation, this would actually execute the code
+        code_lower = code.lower()
+        has_return = "return" in code_lower or "print" in code_lower
+        
+        # Determine outcome based on simple heuristics
+        # For stub: if code looks valid and has basic structure, accept it
+        if has_return and len(code.strip()) > 10:
+            # 90% chance of acceptance for valid-looking code
+            outcome = random.choices(
+                ["ACCEPTED", "WRONG_ANSWER"],
+                weights=[90, 10]
+            )[0]
+        else:
+            # Invalid code structure
+            outcome = "RUNTIME_ERROR"
         
         # Check for time limit
         if execution_time > time_limit:
@@ -138,7 +149,7 @@ class PythonExecutor(BaseExecutor):
                 status="RUNTIME_ERROR",
                 time_ms=execution_time,
                 memory_mb=memory_used,
-                error_message="Runtime error: Division by zero (stub)"
+                error_message="Runtime error: Invalid code structure"
             )
     
     def _create_error_response(self, error_message: str) -> Dict[str, Any]:

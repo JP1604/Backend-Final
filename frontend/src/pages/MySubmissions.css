@@ -153,6 +153,13 @@
   margin: 0;
 }
 
+.test-cases-info {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0.25rem 0 0 0;
+  font-weight: 500;
+}
+
 .loading {
   display: flex;
   flex-direction: column;

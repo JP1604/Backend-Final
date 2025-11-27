@@ -131,3 +131,27 @@ class ChallengeRepositoryImpl(ChallengeRepository):
             )
             for tc in test_case_models
         ]
+    
+    async def save_test_case(self, test_case: TestCase) -> TestCase:
+        """Save a test case for a challenge"""
+        test_case_model = TestCaseModel(
+            id=test_case.id,
+            challenge_id=test_case.challenge_id,
+            input=test_case.input,
+            expected_output=test_case.expected_output,
+            is_hidden=test_case.is_hidden,
+            order_index=test_case.order_index,
+            created_at=datetime.utcnow(),
+            updated_at=datetime.utcnow()
+        )
+        self.db.add(test_case_model)
+        self.db.commit()
+        self.db.refresh(test_case_model)
+        return TestCase(
+            id=str(test_case_model.id),
+            challenge_id=str(test_case_model.challenge_id),
+            input=test_case_model.input,
+            expected_output=test_case_model.expected_output,
+            is_hidden=test_case_model.is_hidden,
+            order_index=test_case_model.order_index
+        )

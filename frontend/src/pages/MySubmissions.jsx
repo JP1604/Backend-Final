@@ -103,6 +103,11 @@ const MySubmissions = () => {
                       Time: {submission.time_ms_total}ms
                     </p>
                   )}
+                  {submission.cases && submission.cases.length > 0 && (
+                    <p className="test-cases-info">
+                      {submission.cases.filter(c => c.status === 'ACCEPTED').length} / {submission.cases.length} test cases passed
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

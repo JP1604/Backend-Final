@@ -47,3 +47,8 @@ class ChallengeRepository(ABC):
     async def get_test_cases(self, challenge_id: str) -> List[TestCase]:
         """Get all test cases for a challenge"""
         pass
+    
+    @abstractmethod
+    async def save_test_case(self, test_case: TestCase) -> TestCase:
+        """Save a test case for a challenge"""
+        pass

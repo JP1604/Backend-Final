@@ -10,6 +10,11 @@ from application.dtos.challenge_dto import (
     CreateChallengeRequest, 
     ChallengeResponse
 )
+from application.dtos.test_case_dto import (
+    CreateTestCaseRequest,
+    TestCaseResponse
+)
+from domain.repositories.challenge_repository import TestCase
 from application.use_cases.challenges.create_challenge_use_case import CreateChallengeUseCase
 from application.use_cases.challenges.get_challenges_use_case import GetChallengesUseCase
 from application.use_cases.challenges.get_challenge_use_case import GetChallengeUseCase
@@ -17,6 +22,12 @@ from infrastructure.repositories.challenge_repository_impl import ChallengeRepos
 from infrastructure.persistence.database import get_db
 from domain.entities.user import UserRole
 from presentation.middleware.auth_middleware import get_current_user
+import logging
+
+logger = logging.getLogger(__name__)
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/challenges", 
