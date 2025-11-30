@@ -1,6 +1,7 @@
 from enum import Enum
 from datetime import datetime
 from typing import Optional, List
+from domain.entities.submission import ProgrammingLanguage
 
 
 class ChallengeDifficulty(str, Enum):
@@ -26,6 +27,7 @@ class Challenge:
         time_limit: int,  # in milliseconds
         memory_limit: int,  # in MB
         status: ChallengeStatus,
+        language: ProgrammingLanguage,
         created_by: str,  # User ID
         course_id: Optional[str] = None,
         created_at: Optional[datetime] = None,
@@ -39,6 +41,7 @@ class Challenge:
         self.time_limit = time_limit
         self.memory_limit = memory_limit
         self.status = status
+        self.language = language
         self.created_by = created_by
         self.course_id = course_id
         self.created_at = created_at or datetime.utcnow()

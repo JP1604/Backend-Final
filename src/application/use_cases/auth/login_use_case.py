@@ -1,6 +1,6 @@
 from typing import Dict, Any
-from ....domain.entities.user import User
-from ....domain.repositories.user_repository import UserRepository
+from domain.entities.user import User
+from domain.repositories.user_repository import UserRepository
 
 
 class LoginUseCase:
@@ -16,8 +16,12 @@ class LoginUseCase:
         if not user:
             raise ValueError("Invalid credentials")
 
-        # Verificar contraseña (simplificado para demo)
-        if password != "password":
+        # Verificar contraseña usando bcrypt
+        is_password_correct = await self.password_service.verify_password(
+            password, 
+            user.password
+        )
+        if not is_password_correct:
             raise ValueError("Invalid credentials")
 
         # Generar token JWT

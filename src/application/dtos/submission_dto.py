@@ -1,19 +1,21 @@
 from pydantic import BaseModel
 from typing import List, Optional
-from ...domain.entities.submission import ProgrammingLanguage, SubmissionStatus
+from domain.entities.submission import ProgrammingLanguage, SubmissionStatus
 
 
 class TestCaseResultResponse(BaseModel):
-    case_id: int
+    case_id: str  # UUID string
     status: SubmissionStatus
     time_ms: int
     memory_mb: Optional[int] = None
     error_message: Optional[str] = None
+    passed: Optional[bool] = None
+    actual_output: Optional[str] = None
+    expected_output: Optional[str] = None
 
 
 class SubmitSolutionRequest(BaseModel):
     challenge_id: str
-    language: ProgrammingLanguage
     code: str
 
 
@@ -21,6 +23,7 @@ class SubmissionResponse(BaseModel):
     id: str
     user_id: str
     challenge_id: str
+    challenge_title: Optional[str] = None  # Challenge title for display
     language: ProgrammingLanguage
     code: str
     status: SubmissionStatus

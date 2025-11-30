@@ -41,11 +41,12 @@ services:
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
     ports:
       - "8008:8000"
+    volumes:
+      - .:/app
     depends_on:
       - postgres
       - redis
-    volumes:
-      - .:/app
+    restart: unless-stopped
     networks:
       - online-judge-network
 
@@ -64,6 +65,29 @@ services:
       - redis
     volumes:
       - .:/app
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - online-judge-network
+
+  # Frontend (React) served by Nginx
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_OPENAI_API_KEY: ${VITE_OPENAI_API_KEY}
+        VITE_OPENAI_PROJECT_ID: ${VITE_OPENAI_PROJECT_ID}
+    container_name: online-judge-frontend
+    depends_on:
+      - api
+    environment:
+      # When building the static assets, this env var will be used by Vite, but
+      # the important one is build arg VITE_API_URL which is evaluated at build time.
+      VITE_API_URL: /api
+    ports:
+      - "8080:80"
+    restart: unless-stopped
     networks:
       - online-judge-network
 

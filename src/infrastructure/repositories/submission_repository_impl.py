@@ -1,8 +1,8 @@
 from typing import Optional, List
 from sqlalchemy.orm import Session
-from ...domain.entities.submission import Submission, TestCaseResult
-from ...domain.repositories.submission_repository import SubmissionRepository
-from ..persistence.models import SubmissionModel
+from domain.entities.submission import Submission, TestCaseResult
+from domain.repositories.submission_repository import SubmissionRepository
+from infrastructure.persistence.models import SubmissionModel
 from datetime import datetime
 
 
@@ -101,7 +101,9 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             "status": case.status,
             "time_ms": case.time_ms,
             "memory_mb": case.memory_mb,
-            "error_message": case.error_message
+            "error_message": case.error_message,
+            "output": case.output,
+            "expected_output": case.expected_output
         }
 
     def _dict_to_case(self, case_data: dict) -> TestCaseResult:
@@ -110,5 +112,7 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             status=case_data["status"],
             time_ms=case_data["time_ms"],
             memory_mb=case_data.get("memory_mb"),
-            error_message=case_data.get("error_message")
+            error_message=case_data.get("error_message"),
+            output=case_data.get("output"),
+            expected_output=case_data.get("expected_output")
         )

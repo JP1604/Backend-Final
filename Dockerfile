@@ -13,10 +13,16 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
-COPY . .
+COPY src ./src
+
+# Set PYTHONPATH to /app/src so absolute imports work
+ENV PYTHONPATH=/app/src
+
+# Set working directory to src
+WORKDIR /app/src
 
 # Expose port
 EXPOSE 8000
 
 # Start the application
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

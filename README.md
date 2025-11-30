@@ -1,83 +1,80 @@
-# 🎯 Online Judge - Semana 2 (SIMPLIFICADO)
+# Backend-Final
 
-Una plataforma simple para evaluar algoritmos, como HackerRank pero más fácil de entender.
+This project contains a FastAPI backend and a React + Vite frontend for a simple Online Judge system.
 
-## 🚀 ¿Qué hace esta plataforma?
+## Running everything with Docker Compose (recommended)
 
-1. **Profesores** pueden crear problemas de programación
-2. **Estudiantes** pueden resolver los problemas enviando código
-3. **El sistema** evalúa automáticamente el código y da un resultado
+Build and start the whole stack:
 
-## 📁 Estructura SIMPLE del proyecto
+```powershell
+# Build and start all services
+docker-compose up -d --build
 
-```
-src/
-├── domain/              # Las reglas del negocio
-│   ├── entities/        # Los objetos principales (User, Challenge, Submission)
-│   └── repositories/    # Interfaces para guardar datos
-├── application/         # La lógica de la aplicación
-│   ├── use_cases/      # Las acciones que se pueden hacer
-│   └── dtos/           # Los formatos de datos
-├── infrastructure/      # Conexiones externas
-│   ├── persistence/    # Base de datos
-│   ├── repositories/   # Implementaciones para guardar datos
-│   └── services/       # Servicios externos (JWT, Redis)
-├── presentation/        # La API REST
-│   ├── controllers/    # Los endpoints de la API
-│   └── middleware/     # Autenticación
-└── workers/            # Procesadores de código
+# Show logs for services
+docker-compose logs -f
 ```
 
-## 🛠️ Tecnologías usadas
+- Frontend (static site served by Nginx): http://localhost:8080
+- Backend API (FastAPI): http://localhost:8008
 
-- **FastAPI**: Framework para crear la API
-- **PostgreSQL**: Base de datos
-- **Redis**: Cola de mensajes
-- **Celery**: Procesador de tareas
-- **Docker**: Para ejecutar todo junto
+## Local development
 
-## 🚀 Cómo ejecutar
+### Backend
 
-### Opción 1: Con Docker (RECOMENDADO)
+Run the backend directly with Python (requires dependencies in `requirements.txt`):
 
-```bash
-# 1. Levantar todos los servicios
-docker-compose up -d
+```powershell
+# Install dependencies
+pip install -r requirements.txt
+
+# Start backend
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+This will map the API at http://localhost:8000 inside containers; if using Docker Compose, the API is exposed at host port 8008.
+
+### Frontend
+
+Install frontend dependencies and run Vite dev server:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+The dev server listens on http://localhost:5173 by default. When using `npm run dev` with the backend running in Docker at host port 8008, the frontend will call `http://localhost:8008` by default.
+
+### Build and serve frontend locally (production build)
+
+```powershell
+cd frontend
+npm run build
+npx serve -s dist -p 8080
+```
+
+> Use `VITE_API_URL` env var when building the frontend to point to the backend. For example, when building a container or building locally to be served with Nginx (production):
+>
+> ```powershell
+> # Build the frontend with a relative API base
+> set VITE_API_URL=/api
+> npm run build
+> ```
+
+## Notes on integration
+
+- The frontend's API base URL is configured using the Vite env var `VITE_API_URL` (accessed in code via `import.meta.env.VITE_API_URL`).
+- For development outside Docker, the default base URL falls back to `http://localhost:8008` so a local Vite dev server can reach the API running in Docker.
+- For Docker-based deployment, the frontend is built with `VITE_API_URL=/api` and served by Nginx; Nginx proxies `/api` to the backend service by container name `api:8000`.
+- CORS is enabled on the backend (development) to allow requests from the frontend.
+
+## Troubleshooting tips
+- If frontend doesn't appear, verify no local dev server is binding to the mapped port (for example, port 5173 already used by the dev server). Docker mapping uses 8080 for the built frontend.
+- If the API returns CORS errors in dev, make sure the backend is running and CORS is allowed (in `src/main.py`, it's already set to allow all origins).
 
 
+---
 
-# 3. Ver la API en el navegador
-# Abrir: http://localhost:8008/docs
-
-
-
-
-## 📋 Endpoints principales
-
-### 🔐 Autenticación
-- `POST /auth/login` - Iniciar sesión
-
-### 📝 Challenges (Problemas)
-- `GET /challenges/` - Ver todos los problemas
-- `POST /challenges/` - Crear un problema (solo profesores)
-
-### 💻 Submissions (Envíos)
-- `POST /submissions/` - Enviar solución a un problema
-
-## 👥 Usuarios de prueba
-
-Se crean automáticamente estos usuarios:
-
-- **Admin**: admin@example.com / password
-- **Profesor**: professor@example.com / password  
-- **Estudiante**: student@example.com / password
-
-## 🎯 ¿Cómo funciona?
-
-1. **Profesor** crea un challenge (problema)
-2. **Estudiante** se loguea y ve los challenges
-3. **Estudiante** envía su código como solución
-4. **Worker** procesa el código (simula ejecución)
-5. **Sistema** devuelve el resultado (ACCEPTED, WRONG_ANSWER, etc.)
-
-
+If you want, I can also:
+- Add a `Makefile` or `scripts` to streamline common tasks like `make dev`.
+- Add a `docker-compose.override.yml` for development with volume mounts and `npm run dev` instead of building the static assets.
