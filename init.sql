@@ -1,6 +1,6 @@
 -- ============================================
 -- Online Judge Platform - Complete Database Setup
--- Version: 2.0 (With Course and Exam System)
+-- Version: 2.1 (With Course and Exam System + Exam Attempt Linking)
 -- ============================================
 
 -- Create database if not exists
@@ -66,6 +66,7 @@ CREATE TABLE IF NOT EXISTS submissions (
     score INTEGER DEFAULT 0,
     time_ms_total INTEGER DEFAULT 0,
     cases JSONB,
+    exam_attempt_id UUID,  -- Link to exam attempt if submitted during exam (FK added after exam_attempts table)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -148,6 +149,20 @@ CREATE TABLE IF NOT EXISTS exam_attempts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Add foreign key constraint for exam_attempt_id in submissions table
+-- (Must be done after exam_attempts table is created)
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'fk_submissions_exam_attempt'
+    ) THEN
+        ALTER TABLE submissions 
+        ADD CONSTRAINT fk_submissions_exam_attempt 
+        FOREIGN KEY (exam_attempt_id) REFERENCES exam_attempts(id);
+    END IF;
+END $$;
+
 -- ============================================
 -- INDEXES FOR PERFORMANCE
 -- ============================================
@@ -163,6 +178,7 @@ CREATE INDEX IF NOT EXISTS idx_challenges_course_id ON challenges(course_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_user_id ON submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_challenge_id ON submissions(challenge_id);
 CREATE INDEX IF NOT EXISTS idx_submissions_status ON submissions(status);
+CREATE INDEX IF NOT EXISTS idx_submissions_exam_attempt_id ON submissions(exam_attempt_id);
 
 CREATE INDEX IF NOT EXISTS idx_test_cases_challenge_id ON test_cases(challenge_id);
 

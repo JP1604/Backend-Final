@@ -32,6 +32,7 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             submission_model.score = submission.score
             submission_model.time_ms_total = submission.time_ms_total
             submission_model.cases = [self._case_to_dict(case) for case in submission.cases]
+            submission_model.exam_attempt_id = submission.exam_attempt_id
             submission_model.updated_at = datetime.utcnow()
             self.db.commit()
             self.db.refresh(submission_model)
@@ -61,6 +62,15 @@ class SubmissionRepositoryImpl(SubmissionRepository):
         ).order_by(SubmissionModel.created_at.desc()).all()
         return [self._to_domain(submission_model) for submission_model in submission_models]
 
+    async def find_by_exam_attempt(self, attempt_id: str) -> List[Submission]:
+        """Find all submissions for a specific exam attempt"""
+        from uuid import UUID
+        attempt_uuid = UUID(attempt_id)
+        submission_models = self.db.query(SubmissionModel).filter(
+            SubmissionModel.exam_attempt_id == attempt_uuid
+        ).order_by(SubmissionModel.created_at.desc()).all()
+        return [self._to_domain(submission_model) for submission_model in submission_models]
+
     def _to_domain(self, submission_model: SubmissionModel) -> Submission:
         cases = []
         if submission_model.cases:
@@ -77,10 +87,12 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             time_ms_total=submission_model.time_ms_total,
             cases=cases,
             created_at=submission_model.created_at,
-            updated_at=submission_model.updated_at
+            updated_at=submission_model.updated_at,
+            exam_attempt_id=str(submission_model.exam_attempt_id) if submission_model.exam_attempt_id else None
         )
 
     def _to_model(self, submission: Submission) -> SubmissionModel:
+        from uuid import UUID
         return SubmissionModel(
             id=submission.id,
             user_id=submission.user_id,
@@ -91,6 +103,7 @@ class SubmissionRepositoryImpl(SubmissionRepository):
             score=submission.score,
             time_ms_total=submission.time_ms_total,
             cases=[self._case_to_dict(case) for case in submission.cases],
+            exam_attempt_id=UUID(submission.exam_attempt_id) if submission.exam_attempt_id else None,
             created_at=submission.created_at,
             updated_at=submission.updated_at
         )

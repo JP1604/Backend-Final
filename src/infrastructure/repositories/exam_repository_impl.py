@@ -1,5 +1,6 @@
 from typing import List, Optional
 import logging
+from uuid import UUID
 from sqlalchemy.orm import Session
 from infrastructure.persistence.models import ExamAttemptModel, ExamModel
 from domain.entities.exam import ExamStatus
@@ -13,104 +14,164 @@ class ExamRepositoryImpl:
         self.db = db
 
     async def get_attempts_by_exam_id(self, exam_id: str) -> List[dict]:
-        rows = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.exam_id == exam_id).all()
-        attempts = []
-        for r in rows:
-            attempts.append({
-                "id": str(r.id),
-                "user_id": str(r.user_id),
-                "score": int(r.score or 0),
-                "started_at": r.started_at,
-                "submitted_at": r.submitted_at,
-                "passed": bool(r.passed)
-            })
-        return attempts
+        """Get all attempts for an exam"""
+        try:
+            # Convert string to UUID for proper comparison
+            exam_uuid = UUID(exam_id) if isinstance(exam_id, str) else exam_id
+            rows = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.exam_id == exam_uuid).all()
+            attempts = []
+            for r in rows:
+                attempts.append({
+                    "id": str(r.id),
+                    "user_id": str(r.user_id),
+                    "score": int(r.score or 0),
+                    "started_at": r.started_at,
+                    "submitted_at": r.submitted_at,
+                    "passed": bool(r.passed)
+                })
+            return attempts
+        except ValueError as e:
+            logger.error(f"[GET_ATTEMPTS_ERROR] Invalid exam_id format: {exam_id}, error: {str(e)}")
+            raise
+        except Exception as e:
+            logger.error(f"[GET_ATTEMPTS_ERROR] Error getting attempts: {str(e)}", exc_info=True)
+            raise
 
     async def create_attempt(self, exam_id: str, user_id: str) -> dict:
         """Create a new exam attempt and return its identifying info."""
         from infrastructure.persistence.models import ExamAttemptModel
-        attempt = ExamAttemptModel(exam_id=exam_id, user_id=user_id)
-        self.db.add(attempt)
-        self.db.commit()
-        self.db.refresh(attempt)
-        return {
-            "id": str(attempt.id),
-            "exam_id": str(attempt.exam_id),
-            "user_id": str(attempt.user_id),
-            "started_at": attempt.started_at
-        }
+        try:
+            # Convert strings to UUIDs for proper database insertion
+            exam_uuid = UUID(exam_id) if isinstance(exam_id, str) else exam_id
+            user_uuid = UUID(user_id) if isinstance(user_id, str) else user_id
+            
+            attempt = ExamAttemptModel(exam_id=exam_uuid, user_id=user_uuid)
+            self.db.add(attempt)
+            self.db.commit()
+            self.db.refresh(attempt)
+            
+            logger.info(f"[ATTEMPT_CREATED] Created attempt {attempt.id} for exam {exam_id}, user {user_id}")
+            
+            return {
+                "id": str(attempt.id),
+                "exam_id": str(attempt.exam_id),
+                "user_id": str(attempt.user_id),
+                "started_at": attempt.started_at
+            }
+        except ValueError as e:
+            logger.error(f"[CREATE_ATTEMPT_ERROR] Invalid UUID format - exam_id: {exam_id}, user_id: {user_id}, error: {str(e)}")
+            self.db.rollback()
+            raise ValueError(f"Invalid UUID format: {str(e)}")
+        except Exception as e:
+            logger.error(f"[CREATE_ATTEMPT_ERROR] Error creating attempt: {str(e)}", exc_info=True)
+            self.db.rollback()
+            raise
 
     async def get_attempt_by_id(self, attempt_id: str) -> dict | None:
-        r = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.id == attempt_id).first()
-        if not r:
+        try:
+            attempt_uuid = UUID(attempt_id) if isinstance(attempt_id, str) else attempt_id
+            r = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.id == attempt_uuid).first()
+            if not r:
+                return None
+            return {
+                "id": str(r.id),
+                "exam_id": str(r.exam_id),
+                "user_id": str(r.user_id),
+                "started_at": r.started_at,
+                "submitted_at": r.submitted_at,
+                "score": int(r.score or 0),
+                "passed": bool(r.passed),
+                "is_active": bool(r.is_active)
+            }
+        except ValueError as e:
+            logger.error(f"[GET_ATTEMPT_ERROR] Invalid attempt_id format: {attempt_id}, error: {str(e)}")
             return None
-        return {
-            "id": str(r.id),
-            "exam_id": str(r.exam_id),
-            "user_id": str(r.user_id),
-            "started_at": r.started_at,
-            "submitted_at": r.submitted_at,
-            "score": int(r.score or 0),
-            "passed": bool(r.passed),
-            "is_active": bool(r.is_active)
-        }
+        except Exception as e:
+            logger.error(f"[GET_ATTEMPT_ERROR] Error getting attempt: {str(e)}", exc_info=True)
+            raise
 
     async def finalize_attempt(self, attempt_id: str, score: int, passed: bool):
         """Finalize an exam attempt: set submitted_at, score and passed flag."""
-        from datetime import datetime
-        r = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.id == attempt_id).first()
-        if not r:
-            raise ValueError(f"Attempt {attempt_id} not found")
-        r.submitted_at = datetime.utcnow()
-        r.score = score
-        r.passed = passed
-        r.is_active = False
-        self.db.commit()
-        self.db.refresh(r)
-        return {
-            "id": str(r.id),
-            "exam_id": str(r.exam_id),
-            "user_id": str(r.user_id),
-            "score": int(r.score or 0),
-            "submitted_at": r.submitted_at,
-            "passed": bool(r.passed)
-        }
+        from datetime import datetime, timezone
+        try:
+            attempt_uuid = UUID(attempt_id) if isinstance(attempt_id, str) else attempt_id
+            r = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.id == attempt_uuid).first()
+            if not r:
+                raise ValueError(f"Attempt {attempt_id} not found")
+            r.submitted_at = datetime.now(timezone.utc)
+            r.score = score
+            r.passed = passed
+            r.is_active = False
+            self.db.commit()
+            self.db.refresh(r)
+            return {
+                "id": str(r.id),
+                "exam_id": str(r.exam_id),
+                "user_id": str(r.user_id),
+                "score": int(r.score or 0),
+                "submitted_at": r.submitted_at,
+                "passed": bool(r.passed)
+            }
+        except ValueError as e:
+            logger.error(f"[FINALIZE_ATTEMPT_ERROR] Invalid attempt_id format: {attempt_id}, error: {str(e)}")
+            self.db.rollback()
+            raise ValueError(f"Invalid attempt ID: {str(e)}")
+        except Exception as e:
+            logger.error(f"[FINALIZE_ATTEMPT_ERROR] Error finalizing attempt: {str(e)}", exc_info=True)
+            self.db.rollback()
+            raise
 
     async def get_exam_by_id(self, exam_id: str) -> Optional[Exam]:
         """Get exam by ID as domain entity"""
-        r = self.db.query(ExamModel).filter(ExamModel.id == exam_id).first()
-        if not r:
+        try:
+            exam_uuid = UUID(exam_id) if isinstance(exam_id, str) else exam_id
+            r = self.db.query(ExamModel).filter(ExamModel.id == exam_uuid).first()
+            if not r:
+                return None
+            return self._to_entity(r)
+        except ValueError as e:
+            logger.error(f"[GET_EXAM_ERROR] Invalid exam_id format: {exam_id}, error: {str(e)}")
             return None
-        return self._to_entity(r)
+        except Exception as e:
+            logger.error(f"[GET_EXAM_ERROR] Error getting exam: {str(e)}", exc_info=True)
+            raise
     
     async def get_exam_dict_by_id(self, exam_id: str) -> dict | None:
         """Get exam by ID as dictionary (for backward compatibility)"""
-        r = self.db.query(ExamModel).filter(ExamModel.id == exam_id).first()
-        if not r:
+        try:
+            exam_uuid = UUID(exam_id) if isinstance(exam_id, str) else exam_id
+            r = self.db.query(ExamModel).filter(ExamModel.id == exam_uuid).first()
+            if not r:
+                return None
+            # Convert status string to enum value if needed
+            status_value = r.status
+            if isinstance(status_value, str):
+                try:
+                    status_value = ExamStatus(status_value.lower())
+                except ValueError:
+                    status_value = ExamStatus.DRAFT
+            
+            return {
+                "id": str(r.id),
+                "course_id": str(r.course_id),
+                "title": r.title,
+                "description": r.description,
+                "start_time": r.start_time,
+                "end_time": r.end_time,
+                "duration_minutes": r.duration_minutes,
+                "max_attempts": r.max_attempts,
+                "passing_score": r.passing_score,
+                "status": status_value.value if isinstance(status_value, ExamStatus) else status_value,
+                "created_at": r.created_at,
+                "updated_at": r.updated_at,
+                "created_by": str(r.created_by)
+            }
+        except ValueError as e:
+            logger.error(f"[GET_EXAM_DICT_ERROR] Invalid exam_id format: {exam_id}, error: {str(e)}")
             return None
-        # Convert status string to enum value if needed
-        status_value = r.status
-        if isinstance(status_value, str):
-            try:
-                status_value = ExamStatus(status_value.lower())
-            except ValueError:
-                status_value = ExamStatus.DRAFT
-        
-        return {
-            "id": str(r.id),
-            "course_id": str(r.course_id),
-            "title": r.title,
-            "description": r.description,
-            "start_time": r.start_time,
-            "end_time": r.end_time,
-            "duration_minutes": r.duration_minutes,
-            "max_attempts": r.max_attempts,
-            "passing_score": r.passing_score,
-            "status": status_value.value if isinstance(status_value, ExamStatus) else status_value,
-            "created_at": r.created_at,
-            "updated_at": r.updated_at,
-            "created_by": str(r.created_by)
-        }
+        except Exception as e:
+            logger.error(f"[GET_EXAM_DICT_ERROR] Error getting exam dict: {str(e)}", exc_info=True)
+            raise
     
     async def find_all(self) -> List[Exam]:
         """Get all exams"""
@@ -119,8 +180,16 @@ class ExamRepositoryImpl:
     
     async def find_by_course_id(self, course_id: str) -> List[Exam]:
         """Get all exams for a course"""
-        rows = self.db.query(ExamModel).filter(ExamModel.course_id == course_id).all()
-        return [self._to_entity(r) for r in rows]
+        try:
+            course_uuid = UUID(course_id) if isinstance(course_id, str) else course_id
+            rows = self.db.query(ExamModel).filter(ExamModel.course_id == course_uuid).all()
+            return [self._to_entity(r) for r in rows]
+        except ValueError as e:
+            logger.error(f"[FIND_BY_COURSE_ERROR] Invalid course_id format: {course_id}, error: {str(e)}")
+            return []
+        except Exception as e:
+            logger.error(f"[FIND_BY_COURSE_ERROR] Error finding exams by course: {str(e)}", exc_info=True)
+            raise
     
     async def save(self, exam: Exam) -> Exam:
         """Save a new exam"""
@@ -152,9 +221,19 @@ class ExamRepositoryImpl:
     
     async def delete(self, exam_id: str) -> bool:
         """Delete an exam"""
-        result = self.db.query(ExamModel).filter(ExamModel.id == exam_id).delete()
-        self.db.commit()
-        return result > 0
+        try:
+            # Convert to UUID for proper comparison
+            exam_uuid = UUID(exam_id) if isinstance(exam_id, str) else exam_id
+            result = self.db.query(ExamModel).filter(ExamModel.id == exam_uuid).delete()
+            self.db.commit()
+            return result > 0
+        except ValueError as e:
+            logger.error(f"[DELETE_EXAM_ERROR] Invalid exam_id format: {exam_id}, error: {str(e)}")
+            return False
+        except Exception as e:
+            logger.error(f"[DELETE_EXAM_ERROR] Error deleting exam: {str(e)}", exc_info=True)
+            self.db.rollback()
+            raise
     
     def _to_entity(self, model: ExamModel) -> Exam:
         """Convert database model to domain entity"""
@@ -189,12 +268,18 @@ class ExamRepositoryImpl:
     
     def _to_model(self, entity: Exam) -> ExamModel:
         """Convert domain entity to database model"""
+        from uuid import UUID
         # Convert enum to its string value for storage
         status_value = entity.status.value if isinstance(entity.status, ExamStatus) else entity.status
         
+        # Convert string IDs to UUID objects for database
+        entity_id = UUID(entity.id) if isinstance(entity.id, str) else entity.id
+        course_id = UUID(entity.course_id) if isinstance(entity.course_id, str) else entity.course_id
+        created_by = UUID(entity.created_by) if isinstance(entity.created_by, str) else entity.created_by
+        
         return ExamModel(
-            id=entity.id,
-            course_id=entity.course_id,
+            id=entity_id,
+            course_id=course_id,
             title=entity.title,
             description=entity.description,
             status=status_value,
@@ -203,56 +288,75 @@ class ExamRepositoryImpl:
             duration_minutes=entity.duration_minutes,
             max_attempts=entity.max_attempts,
             passing_score=entity.passing_score,
-            created_by=entity.created_by
+            created_by=created_by
         )
 
     async def get_exams_by_course_id(self, course_id: str) -> List[dict]:
         """Get all exams for a specific course"""
         from infrastructure.persistence.models import ExamModel
-        rows = self.db.query(ExamModel).filter(ExamModel.course_id == course_id).all()
-        exams = []
-        for r in rows:
-            exams.append({
-                "id": str(r.id),
-                "course_id": str(r.course_id),
-                "title": r.title,
-                "description": r.description,
-                "start_time": r.start_time,
-                "end_time": r.end_time,
-                "duration_minutes": r.duration_minutes,
-                "max_attempts": r.max_attempts,
-                "passing_score": r.passing_score,
-                "status": r.status,
-                "created_at": r.created_at,
-                "updated_at": r.updated_at
-            })
-        return exams
+        try:
+            # Convert to UUID for proper comparison
+            course_uuid = UUID(course_id) if isinstance(course_id, str) else course_id
+            rows = self.db.query(ExamModel).filter(ExamModel.course_id == course_uuid).all()
+            exams = []
+            for r in rows:
+                exams.append({
+                    "id": str(r.id),
+                    "course_id": str(r.course_id),
+                    "title": r.title,
+                    "description": r.description,
+                    "start_time": r.start_time,
+                    "end_time": r.end_time,
+                    "duration_minutes": r.duration_minutes,
+                    "max_attempts": r.max_attempts,
+                    "passing_score": r.passing_score,
+                    "status": r.status,
+                    "created_at": r.created_at,
+                    "updated_at": r.updated_at
+                })
+            return exams
+        except ValueError as e:
+            logger.error(f"[GET_EXAMS_BY_COURSE_ERROR] Invalid course_id format: {course_id}, error: {str(e)}")
+            return []
+        except Exception as e:
+            logger.error(f"[GET_EXAMS_BY_COURSE_ERROR] Error getting exams: {str(e)}", exc_info=True)
+            raise
 
     async def get_exam_scores_by_course_id(self, course_id: str) -> List[dict]:
         """Get all exam attempts with scores for all students in a course"""
         from infrastructure.persistence.models import ExamModel, ExamAttemptModel
         
-        # Get all exams for the course
-        exams = self.db.query(ExamModel).filter(ExamModel.course_id == course_id).all()
-        
-        results = []
-        for exam in exams:
-            # Get all attempts for this exam
-            attempts = self.db.query(ExamAttemptModel).filter(
-                ExamAttemptModel.exam_id == str(exam.id)
-            ).all()
+        try:
+            # Convert to UUID for proper comparison
+            course_uuid = UUID(course_id) if isinstance(course_id, str) else course_id
             
-            for attempt in attempts:
-                results.append({
-                    "exam_id": str(exam.id),
-                    "exam_title": exam.title,
-                    "user_id": str(attempt.user_id),
-                    "attempt_id": str(attempt.id),
-                    "score": int(attempt.score or 0),
-                    "passed": bool(attempt.passed),
-                    "started_at": attempt.started_at,
-                    "submitted_at": attempt.submitted_at,
-                    "is_active": bool(attempt.is_active)
-                })
-        
-        return results
+            # Get all exams for the course
+            exams = self.db.query(ExamModel).filter(ExamModel.course_id == course_uuid).all()
+            
+            results = []
+            for exam in exams:
+                # Get all attempts for this exam
+                attempts = self.db.query(ExamAttemptModel).filter(
+                    ExamAttemptModel.exam_id == exam.id
+                ).all()
+                
+                for attempt in attempts:
+                    results.append({
+                        "exam_id": str(exam.id),
+                        "exam_title": exam.title,
+                        "user_id": str(attempt.user_id),
+                        "attempt_id": str(attempt.id),
+                        "score": int(attempt.score or 0),
+                        "passed": bool(attempt.passed),
+                        "started_at": attempt.started_at,
+                        "submitted_at": attempt.submitted_at,
+                        "is_active": bool(attempt.is_active)
+                    })
+            
+            return results
+        except ValueError as e:
+            logger.error(f"[GET_EXAM_SCORES_ERROR] Invalid course_id format: {course_id}, error: {str(e)}")
+            return []
+        except Exception as e:
+            logger.error(f"[GET_EXAM_SCORES_ERROR] Error getting exam scores: {str(e)}", exc_info=True)
+            raise

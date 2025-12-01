@@ -204,12 +204,22 @@ class CourseRepositoryImpl(CourseRepository):
     
     async def get_students(self, course_id: str) -> List[str]:
         """Get all student IDs enrolled in a course"""
-        result = self.db.execute(
-            select(course_students.c.user_id).where(
-                course_students.c.course_id == course_id
+        try:
+            from uuid import UUID
+            # Convert to UUID for proper comparison
+            course_uuid = UUID(course_id) if isinstance(course_id, str) else course_id
+            result = self.db.execute(
+                select(course_students.c.user_id).where(
+                    course_students.c.course_id == course_uuid
+                )
             )
-        )
-        return [str(row[0]) for row in result]
+            return [str(row[0]) for row in result]
+        except ValueError as e:
+            logger.error(f"[GET_STUDENTS_ERROR] Invalid course_id format: {course_id}, error: {str(e)}")
+            return []
+        except Exception as e:
+            logger.error(f"[GET_STUDENTS_ERROR] Error getting students: {str(e)}", exc_info=True)
+            raise
     
     async def assign_challenge(self, course_id: str, challenge_id: str, order_index: int = 0) -> bool:
         """Assign a challenge to a course"""

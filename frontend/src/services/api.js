@@ -116,8 +116,12 @@ export const usersAPI = {
 
 // Submissions API
 export const submissionsAPI = {
-  submit: (challengeId, code) => 
-    api.post('/submissions/submit', { challenge_id: challengeId, code }),
+  submit: (challengeId, code, examAttemptId = null) => 
+    api.post('/submissions/submit', { 
+      challenge_id: challengeId, 
+      code,
+      exam_attempt_id: examAttemptId
+    }),
   getById: (id) => api.get(`/submissions/${id}`),
   getByChallenge: (challengeId) => api.get(`/submissions/challenge/${challengeId}`),
   getMy: () => api.get('/submissions/my'),
@@ -154,9 +158,18 @@ export const examsAPI = {
   create: (data) => api.post('/exams/', data),
   update: (id, data) => api.put(`/exams/${id}`, data),
   startAttempt: (examId) => api.post(`/exams/${examId}/start`),
-  submitAttempt: (examId, attemptId, data) => 
-    api.post(`/exams/${examId}/attempts/${attemptId}/submit`, data),
+  submitAttempt: (attemptId) => api.post(`/exams/attempts/${attemptId}/submit`),
   getResults: (examId) => api.get(`/exams/${examId}/results`),
+  getChallenges: (examId) => api.get(`/exams/${examId}/challenges`),
+  assignChallenge: (examId, challengeId, points = 100, orderIndex = 0) =>
+    api.post(`/exams/${examId}/challenges`, {
+      challenge_id: challengeId,
+      points,
+      order_index: orderIndex,
+    }),
+  unassignChallenge: (examId, challengeId) =>
+    api.delete(`/exams/${examId}/challenges/${challengeId}`),
+  getAttempts: (examId) => api.get(`/exams/${examId}/attempts`),
 };
 
 export default api;

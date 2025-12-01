@@ -53,7 +53,8 @@ class Submission:
         time_ms_total: int,
         cases: List[TestCaseResult],
         created_at: datetime,
-        updated_at: datetime
+        updated_at: datetime,
+        exam_attempt_id: Optional[str] = None  # Link to exam attempt if submitted during exam
     ):
         self.id = id
         self.user_id = user_id
@@ -66,6 +67,7 @@ class Submission:
         self.cases = cases
         self.created_at = created_at
         self.updated_at = updated_at
+        self.exam_attempt_id = exam_attempt_id
 
     def is_completed(self) -> bool:
         return self.status in [

@@ -17,6 +17,7 @@ class TestCaseResultResponse(BaseModel):
 class SubmitSolutionRequest(BaseModel):
     challenge_id: str
     code: str
+    exam_attempt_id: Optional[str] = None  # Optional: link submission to exam attempt
 
 
 class SubmissionResponse(BaseModel):

@@ -53,6 +53,7 @@ class SubmissionModel(Base):
     score = Column(Integer, nullable=False, default=0)
     time_ms_total = Column(Integer, nullable=False, default=0)
     cases = Column(JSON, nullable=True)
+    exam_attempt_id = Column(UUID(as_uuid=True), ForeignKey('exam_attempts.id'), nullable=True, index=True)  # Link to exam attempt if submitted during exam
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

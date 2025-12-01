@@ -110,6 +110,14 @@ const CourseDetail = () => {
         'hard': 'Hard'
       };
       
+      // Convert language to match enum (PYTHON, NODEJS, JAVA, CPP)
+      const languageMap = {
+        'python': 'PYTHON',
+        'nodejs': 'NODEJS',
+        'java': 'JAVA',
+        'cpp': 'CPP'
+      };
+      
       const challengeData = {
         title: newChallenge.title.trim(),
         description: newChallenge.description.trim(),
@@ -117,7 +125,7 @@ const CourseDetail = () => {
         tags: newChallenge.tags.split(',').map(t => t.trim()).filter(t => t),
         time_limit: parseInt(newChallenge.time_limit),
         memory_limit: parseInt(newChallenge.memory_limit),
-        language: newChallenge.language,
+        language: languageMap[newChallenge.language.toLowerCase()] || newChallenge.language.toUpperCase(),
         course_id: courseId,
       };
       
