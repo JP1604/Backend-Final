@@ -148,7 +148,7 @@ const AIAssistant = ({ onApplySuggestion, currentChallenge }) => {
 
       // Transform test cases to match backend DTO format
       const formattedTestCases = (suggestion.testCases || suggestion.test_cases || []).map(tc => ({
-        input: tc.input,
+        input: tc.input || null,  // Input is optional, send null if empty
         expected_output: tc.expected_output || tc.expectedOutput,
         is_hidden: tc.is_hidden !== undefined ? tc.is_hidden : tc.isHidden,
         order_index: tc.order_index || tc.orderIndex
@@ -503,7 +503,7 @@ const AIAssistant = ({ onApplySuggestion, currentChallenge }) => {
 
                                 <div style={{ fontSize: '0.85rem', color: '#6c757d' }}>
                                   <div style={{ marginBottom: '0.25rem' }}>
-                                    <strong>Input:</strong> <code>{result.input || '(empty)'}</code>
+                                    <strong>Input:</strong> <code>{result.input && result.input.trim() ? result.input : '(no input)'}</code>
                                   </div>
                                   <div style={{ marginBottom: '0.25rem' }}>
                                     <strong>Expected:</strong> <code>{result.expected_output}</code>

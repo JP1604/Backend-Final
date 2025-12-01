@@ -65,6 +65,7 @@ const ChallengeDetail = () => {
     try {
       setError('');
       const testCaseData = {
+        input: newTestCase.input?.trim() || null,  // Input is optional
         expected_output: newTestCase.expected_output.trim(),
         is_hidden: newTestCase.is_hidden,
         order_index: parseInt(newTestCase.order_index) || testCases.length + 1
@@ -240,6 +241,18 @@ const ChallengeDetail = () => {
                   <div className="add-test-case-form">
                     <h4>Add New Test Case</h4>
                     <form onSubmit={handleAddTestCase}>
+                      <div className="form-group">
+                        <label>Input (optional)</label>
+                        <textarea
+                          value={newTestCase.input || ''}
+                          onChange={(e) => setNewTestCase({ ...newTestCase, input: e.target.value })}
+                          rows={3}
+                          placeholder="Enter input data for this test case (optional - leave empty if no input needed)"
+                        />
+                        <small style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem', marginTop: '0.25rem', display: 'block' }}>
+                          Leave empty if the challenge doesn't require input
+                        </small>
+                      </div>
                       <div className="form-group">
                         <label>Expected Output *</label>
                         <textarea

@@ -473,7 +473,9 @@
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  align-items: center;
   margin-top: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .btn-primary {
@@ -487,6 +489,11 @@
   font-weight: 600;
   transition: var(--transition);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .btn-primary:hover {
@@ -504,6 +511,11 @@
   font-size: 1rem;
   font-weight: 500;
   transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  white-space: nowrap;
 }
 
 .btn-secondary:hover {

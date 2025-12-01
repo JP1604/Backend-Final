@@ -7,7 +7,7 @@ from typing import List, Optional
 
 class TestCaseGenerationDTO(BaseModel):
     """DTO for a generated test case"""
-    input: str = Field(..., description="Input data for the test case")
+    input: Optional[str] = Field(None, description="Input data for the test case (optional if no input needed)")
     expected_output: str = Field(..., description="Expected output for the test case")
     is_hidden: bool = Field(default=False, description="Whether this test case is hidden from students")
     order_index: int = Field(default=1, description="Order index for test case execution")
@@ -115,7 +115,7 @@ class ValidateTestCasesRequest(BaseModel):
 class TestCaseValidationResult(BaseModel):
     """Result of validating a single test case"""
     order_index: int = Field(..., description="Test case order")
-    input: str = Field(..., description="Test case input")
+    input: Optional[str] = Field(None, description="Test case input (may be empty if no input needed)")
     expected_output: str = Field(..., description="Expected output from AI")
     actual_output: Optional[str] = Field(None, description="Actual output from code execution")
     passed: bool = Field(..., description="Whether test case passed")
