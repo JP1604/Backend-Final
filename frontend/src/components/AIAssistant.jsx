@@ -1,30 +1,29 @@
 import { useState } from 'react';
-import { Sparkles, Loader, Check, X, RefreshCw } from 'lucide-react';
+import { Sparkles, Loader, Check, X, RefreshCw, Play, AlertCircle } from 'lucide-react';
 import './AIAssistant.css';
 
 const AIAssistant = ({ onApplySuggestion, currentChallenge }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [topic, setTopic] = useState('');
+  const [language, setLanguage] = useState('');
   const [suggestions, setSuggestions] = useState([]);
   const [error, setError] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  
+  // Validation state
+  const [showValidation, setShowValidation] = useState(false);
+  const [solutionCode, setSolutionCode] = useState('');
+  const [validating, setValidating] = useState(false);
+  const [validationResults, setValidationResults] = useState(null);
+  const [validationError, setValidationError] = useState('');
 
-  // 🔑 API config
-  const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-  const OPENAI_PROJECT_ID = import.meta.env.VITE_OPENAI_PROJECT_ID; // opcional
-  const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-  // Modelo real y soportado por OpenAI (rápido y económico)
-  const OPENAI_MODEL = 'gpt-4o-mini';
+  // API configuration - now uses backend endpoint
+  const API_BASE_URL = 'http://localhost:8008';
 
   const generateSuggestions = async () => {
     if (!topic.trim()) {
       setError('Please enter a topic or category');
-      return;
-    }
-
-    if (!OPENAI_API_KEY) {
-      setError('Falta la API key. Configura VITE_OPENAI_API_KEY en tu archivo .env');
       return;
     }
 
@@ -33,216 +32,76 @@ const AIAssistant = ({ onApplySuggestion, currentChallenge }) => {
     setSuggestions([]);
 
     try {
-      console.log('OpenAI: Generating challenge for:', topic);
-      const result = await generateWithOpenAI(topic);
+      console.log('Generating challenge via backend for:', topic);
+      const result = await generateWithBackend(topic, language);
 
-      if (result && result.length > 0) {
-        setSuggestions(result);
+      if (result) {
+        setSuggestions([result]);
         setSelectedSuggestion(0);
       } else {
-        setError('La IA no devolvió ninguna sugerencia.');
+        setError('The AI did not return any suggestions.');
       }
     } catch (err) {
       console.error('AI Generation Error:', err);
-      setError(err.message || 'Error llamando a OpenAI');
+      setError(err.message || 'Error generating challenge suggestion');
     } finally {
       setLoading(false);
     }
   };
 
-  const generateWithOpenAI = async (topic) => {
-    const prompt = `
-Eres el ASISTENTE CREATIVO de una plataforma de juez online universitario para evaluar algoritmos.
-La plataforma sigue Clean Architecture y se usa en cursos de programación. 
-Los profesores (ADMIN) crean retos y casos de prueba; los estudiantes (STUDENT) solo ven retos publicados 
-y envían sus soluciones, que se ejecutan en contenedores aislados con límites de tiempo y memoria.
-
-Tu ÚNICO trabajo es ayudar al PROFESOR a crear NUEVOS RETOS de programación. 
-NO evalúas código, solo generas enunciados y casos de prueba que luego serán revisados por humanos.
-
-====================
-TEMA DEL RETO
-====================
-Crea un reto de programación basado en el siguiente tema o categoría:
-"${topic}"
-
-El reto debe:
-- Ser adecuado para un curso universitario de programación / backend.
-- Poder resolverse en alguno de estos lenguajes: Java, Python, Node.js o C++.
-- Tener una dificultad clara (easy, medium o hard).
-- Usar entradas/salidas por consola estándar (stdin / stdout).
-
-====================
-FORMATO DEL RETO
-====================
-Debes generar EXACTAMENTE UN reto completo con:
-
-1) Un título claro y específico.
-2) Un enunciado detallado que incluya secciones marcadas:
-   - **Descripción:** contexto y objetivo del problema.
-   - **Entrada:** formato detallado de los datos de entrada.
-   - **Salida:** formato exacto de la salida.
-   - **Restricciones:** límites numéricos, tamaño máximo de entrada, 
-     tiempo límite (en milisegundos) y memoria límite (en MB).
-3) Una dificultad: easy, medium o hard.
-4) Una lista de tags relevantes (ej: ["arrays", "sorting", "greedy"]).
-5) Ejemplos de uso con entrada/salida y explicación.
-6) Casos de prueba pensados para archivos .in/.out del juez online:
-   - Varios casos simples y otros más complejos.
-   - Algunos públicos (is_hidden = false) y otros ocultos (is_hidden = true).
-
-====================
-FORMATO DE SALIDA (OBLIGATORIO)
-====================
-Devuelve ÚNICAMENTE un JSON VÁLIDO, SIN COMENTARIOS NI TEXTO EXTRA,
-con la siguiente estructura EXACTA:
-
-{
-  "title": "Título específico del desafío",
-  "description": "Enunciado completo del problema. Debe incluir secciones con encabezados: \\n\\n**Descripción:**\\n...\\n\\n**Entrada:**\\n...\\n\\n**Salida:**\\n...\\n\\n**Restricciones:**\\n- ...",
-  "difficulty": "easy",
-  "tags": ["tag1", "tag2", "tag3"],
-  "examples": [
-    {
-      "input": "ejemplo de entrada real\\npueden ser varias líneas",
-      "output": "salida esperada real\\npueden ser varias líneas",
-      "explanation": "explica por qué la salida es correcta"
-    },
-    {
-      "input": "otro ejemplo de entrada",
-      "output": "otra salida esperada",
-      "explanation": "otra explicación breve"
-    }
-  ],
-  "testCases": [
-    {
-      "input": "caso_de_prueba_1",
-      "expected_output": "salida_1",
-      "is_hidden": false
-    },
-    {
-      "input": "caso_de_prueba_2",
-      "expected_output": "salida_2",
-      "is_hidden": false
-    },
-    {
-      "input": "caso_de_prueba_3_mas_complejo",
-      "expected_output": "salida_3",
-      "is_hidden": true
-    },
-    {
-      "input": "caso_de_prueba_4_borde",
-      "expected_output": "salida_4",
-      "is_hidden": true
-    },
-    {
-      "input": "caso_de_prueba_5_grande",
-      "expected_output": "salida_5",
-      "is_hidden": true
-    }
-  ],
-  "limits": {
-    "timeLimitMs": 1500,
-    "memoryLimitMb": 256
-  }
-}
-
-REGLAS FINALES:
-- NO envuelvas el JSON en bloques de código markdown (no uses \`\`\`).
-- NO añadas explicaciones fuera del JSON.
-- Asegúrate de que sea JSON sintácticamente válido.
-`;
-
-    // Construimos headers
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${OPENAI_API_KEY}`,
-    };
-
-    // Si estás usando una clave sk-proj-..., envía también el project id
-    if (OPENAI_PROJECT_ID) {
-      headers['OpenAI-Project'] = OPENAI_PROJECT_ID;
+  const generateWithBackend = async (topic, language) => {
+    // Get JWT token from localStorage
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      throw new Error('You must be logged in to use the AI Assistant');
     }
 
-    const response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'Eres un experto en crear desafíos de programación. Siempre respondes con JSON válido.',
-          },
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-        // Para modelos nuevos se recomienda este campo en vez de max_tokens
-        max_completion_tokens: 2000,
-        // Pedimos explícitamente JSON para simplificar el parseo
-        response_format: { type: 'json_object' },
-      }),
-    });
+    try {
+      const requestBody = { topic };
+      if (language && language.trim()) {
+        requestBody.language = language.toLowerCase();
+      }
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('OpenAI API Error:', errorData);
+      const response = await fetch(`${API_BASE_URL}/ai/generate-challenge`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(requestBody)
+      });
 
-      if (response.status === 401) {
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401) {
+          throw new Error('Session expired. Please log in again.');
+        }
+        
+        if (response.status === 403) {
+          throw new Error('Only professors and administrators can use the AI Assistant');
+        }
+
+        if (response.status === 400) {
+          throw new Error(errorData.detail || 'Invalid request parameters');
+        }
+
         throw new Error(
-          '401 Unauthorized: revisa tu API key (VITE_OPENAI_API_KEY) y, si es sk-proj-..., también VITE_OPENAI_PROJECT_ID.'
+          errorData.detail || `Server error: ${response.status}`
         );
       }
 
-      if (response.status === 429) {
-        throw new Error('Límite de peticiones excedido (429). Intenta de nuevo más tarde.');
+      const data = await response.json();
+      console.log('✅ Backend generated suggestion:', data);
+
+      return data;
+    } catch (err) {
+      if (err instanceof TypeError && err.message.includes('fetch')) {
+        throw new Error('Could not connect to server. Please make sure the backend is running.');
       }
-
-      throw new Error(
-        `OpenAI API error: ${response.status} - ${
-          errorData.error?.message || 'Unknown error'
-        }`
-      );
+      throw err;
     }
-
-    const data = await response.json();
-    console.log('OpenAI API Full Response:', data);
-
-    // Algunos modelos nuevos devuelven el contenido como array de "parts"
-    let text = data?.choices?.[0]?.message?.content;
-
-    if (Array.isArray(text)) {
-      // Unimos todas las partes en un solo string
-      text = text
-        .map((part) => (typeof part === 'string' ? part : part?.text ?? ''))
-        .join('\n')
-        .trim();
-    }
-
-    if (!text || typeof text !== 'string') {
-      console.error('Unexpected OpenAI response shape. choices[0].message.content:', text);
-      throw new Error('Respuesta vacía o inesperada de OpenAI');
-    }
-
-    console.log('OpenAI Raw Text:', text);
-
-    // Intentamos extraer el JSON (por si viene envuelto en ```json ... ```)
-    let jsonText = text;
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch) {
-      jsonText = jsonMatch[1];
-    } else {
-      const cleanMatch = text.match(/\{[\s\S]*\}/);
-      if (cleanMatch) jsonText = cleanMatch[0];
-    }
-
-    const suggestion = JSON.parse(jsonText);
-    console.log('✅ OpenAI generated suggestion:', suggestion);
-
-    return [suggestion];
   };
 
   const applySuggestion = () => {
@@ -252,10 +111,89 @@ REGLAS FINALES:
     setIsOpen(false);
     setSuggestions([]);
     setTopic('');
+    setShowValidation(false);
+    setValidationResults(null);
   };
 
   const regenerateSuggestion = () => {
     generateSuggestions();
+  };
+
+  const validateTestCases = async () => {
+    if (!solutionCode.trim()) {
+      setValidationError('Please enter solution code to validate');
+      return;
+    }
+
+    if (selectedSuggestion === null || !suggestions[selectedSuggestion]) {
+      setValidationError('No suggestion selected');
+      return;
+    }
+
+    const suggestion = suggestions[selectedSuggestion];
+
+    setValidating(true);
+    setValidationError('');
+    setValidationResults(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        throw new Error('You must be logged in to validate test cases');
+      }
+
+      // Determine language from suggestion or default
+      const validationLanguage = suggestion.language || language || 'python';
+
+      // Transform test cases to match backend DTO format
+      const formattedTestCases = (suggestion.testCases || suggestion.test_cases || []).map(tc => ({
+        input: tc.input,
+        expected_output: tc.expected_output || tc.expectedOutput,
+        is_hidden: tc.is_hidden !== undefined ? tc.is_hidden : tc.isHidden,
+        order_index: tc.order_index || tc.orderIndex
+      }));
+
+      const response = await fetch(`${API_BASE_URL}/ai/validate-test-cases`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          solution_code: solutionCode,
+          language: validationLanguage.toLowerCase(),
+          test_cases: formattedTestCases,
+          time_limit_ms: suggestion.limits?.time_limit_ms || 5000
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        
+        if (response.status === 401) {
+          throw new Error('Session expired. Please log in again.');
+        }
+        
+        if (response.status === 403) {
+          throw new Error('Only professors and administrators can validate test cases');
+        }
+
+        throw new Error(
+          errorData.detail || `Validation failed: ${response.status}`
+        );
+      }
+
+      const results = await response.json();
+      console.log('✅ Validation results:', results);
+      setValidationResults(results);
+
+    } catch (err) {
+      console.error('Validation Error:', err);
+      setValidationError(err.message || 'Error validating test cases');
+    } finally {
+      setValidating(false);
+    }
   };
 
   return (
@@ -300,16 +238,38 @@ REGLAS FINALES:
                     className="ai-topic-input"
                     onKeyDown={(e) => e.key === 'Enter' && generateSuggestions()}
                   />
-                  <button
-                    type="button"
-                    onClick={generateSuggestions}
-                    disabled={loading || !topic.trim()}
-                    className="btn-generate"
-                  >
-                    {loading ? <Loader size={18} className="spin" /> : <Sparkles size={18} />}
-                    Generate
-                  </button>
                 </div>
+                
+                <label style={{ marginTop: '1rem' }}>Preferred language (optional):</label>
+                <select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  className="ai-language-select"
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.5rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #ddd',
+                    marginBottom: '1rem'
+                  }}
+                >
+                  <option value="">Any language</option>
+                  <option value="python">Python</option>
+                  <option value="java">Java</option>
+                  <option value="nodejs">Node.js</option>
+                  <option value="cpp">C++</option>
+                </select>
+
+                <button
+                  type="button"
+                  onClick={generateSuggestions}
+                  disabled={loading || !topic.trim()}
+                  className="btn-generate"
+                  style={{ width: '100%' }}
+                >
+                  {loading ? <Loader size={18} className="spin" /> : <Sparkles size={18} />}
+                  {loading ? 'Generating...' : 'Generate Challenge'}
+                </button>
                 {error && <div className="ai-error">{error}</div>}
               </div>
 
@@ -368,9 +328,24 @@ REGLAS FINALES:
                     </button>
                     <button
                       type="button"
+                      onClick={() => setShowValidation(!showValidation)}
+                      className="btn-validate"
+                      disabled={selectedSuggestion === null}
+                      style={{ 
+                        backgroundColor: showValidation ? '#6c757d' : '#17a2b8',
+                        marginLeft: '0.5rem' 
+                      }}
+                    >
+                      <Play size={18} />
+                      {showValidation ? 'Hide Validation' : 'Validate Test Cases'}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         setSuggestions([]);
                         setSelectedSuggestion(null);
+                        setShowValidation(false);
+                        setValidationResults(null);
                       }}
                       className="btn-discard"
                     >
@@ -378,6 +353,193 @@ REGLAS FINALES:
                       Discard
                     </button>
                   </div>
+
+                  {/* Validation Section */}
+                  {showValidation && (
+                    <div className="ai-validation-section" style={{
+                      marginTop: '1.5rem',
+                      padding: '1rem',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '8px',
+                      border: '1px solid #dee2e6'
+                    }}>
+                      <h5 style={{ marginBottom: '1rem', color: '#495057' }}>
+                        <AlertCircle size={20} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                        Validate Test Cases
+                      </h5>
+                      <p style={{ fontSize: '0.9rem', color: '#6c757d', marginBottom: '1rem' }}>
+                        Paste your solution code below to verify that the AI-generated test cases produce the correct outputs.
+                      </p>
+
+                      <textarea
+                        value={solutionCode}
+                        onChange={(e) => setSolutionCode(e.target.value)}
+                        placeholder={`# Example solution code for: ${suggestions[selectedSuggestion]?.title || 'challenge'}\n\n# Write your solution here...`}
+                        style={{
+                          width: '100%',
+                          minHeight: '200px',
+                          fontFamily: 'monospace',
+                          fontSize: '0.9rem',
+                          padding: '0.75rem',
+                          border: '1px solid #ced4da',
+                          borderRadius: '4px',
+                          marginBottom: '1rem',
+                          resize: 'vertical'
+                        }}
+                      />
+
+                      <button
+                        type="button"
+                        onClick={validateTestCases}
+                        disabled={validating || !solutionCode.trim()}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          backgroundColor: validating ? '#6c757d' : '#28a745',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '4px',
+                          cursor: validating ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.5rem',
+                          fontSize: '1rem',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {validating ? (
+                          <>
+                            <Loader size={18} className="spin" />
+                            Validating...
+                          </>
+                        ) : (
+                          <>
+                            <Play size={18} />
+                            Run Validation
+                          </>
+                        )}
+                      </button>
+
+                      {validationError && (
+                        <div style={{
+                          marginTop: '1rem',
+                          padding: '0.75rem',
+                          backgroundColor: '#f8d7da',
+                          color: '#721c24',
+                          borderRadius: '4px',
+                          border: '1px solid #f5c6cb'
+                        }}>
+                          {validationError}
+                        </div>
+                      )}
+
+                      {/* Validation Results */}
+                      {validationResults && (
+                        <div style={{ marginTop: '1rem' }}>
+                          <div style={{
+                            padding: '1rem',
+                            backgroundColor: validationResults.all_passed ? '#d4edda' : '#fff3cd',
+                            border: `1px solid ${validationResults.all_passed ? '#c3e6cb' : '#ffeaa7'}`,
+                            borderRadius: '4px',
+                            marginBottom: '1rem'
+                          }}>
+                            <h6 style={{ 
+                              margin: '0 0 0.5rem 0',
+                              color: validationResults.all_passed ? '#155724' : '#856404'
+                            }}>
+                              {validationResults.all_passed ? '✅ All Tests Passed!' : '⚠️ Some Tests Failed'}
+                            </h6>
+                            <p style={{ 
+                              margin: 0,
+                              fontSize: '0.9rem',
+                              color: validationResults.all_passed ? '#155724' : '#856404'
+                            }}>
+                              {validationResults.passed_count} / {validationResults.total_test_cases} test cases passed
+                            </p>
+                            <p style={{
+                              marginTop: '0.75rem',
+                              marginBottom: 0,
+                              fontSize: '0.9rem',
+                              color: '#495057'
+                            }}>
+                              {validationResults.recommendation}
+                            </p>
+                          </div>
+
+                          {/* Detailed Results */}
+                          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+                            {validationResults.validation_results.map((result, idx) => (
+                              <div
+                                key={idx}
+                                style={{
+                                  padding: '0.75rem',
+                                  marginBottom: '0.5rem',
+                                  backgroundColor: 'white',
+                                  border: `2px solid ${result.passed ? '#28a745' : '#dc3545'}`,
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                <div style={{ 
+                                  display: 'flex', 
+                                  justifyContent: 'space-between',
+                                  alignItems: 'center',
+                                  marginBottom: '0.5rem'
+                                }}>
+                                  <strong style={{ color: '#495057' }}>
+                                    Test Case #{result.order_index}
+                                  </strong>
+                                  <span style={{
+                                    padding: '0.25rem 0.5rem',
+                                    borderRadius: '4px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 'bold',
+                                    backgroundColor: result.passed ? '#d4edda' : '#f8d7da',
+                                    color: result.passed ? '#155724' : '#721c24'
+                                  }}>
+                                    {result.passed ? '✓ PASSED' : '✗ FAILED'}
+                                  </span>
+                                </div>
+
+                                <div style={{ fontSize: '0.85rem', color: '#6c757d' }}>
+                                  <div style={{ marginBottom: '0.25rem' }}>
+                                    <strong>Input:</strong> <code>{result.input || '(empty)'}</code>
+                                  </div>
+                                  <div style={{ marginBottom: '0.25rem' }}>
+                                    <strong>Expected:</strong> <code>{result.expected_output}</code>
+                                  </div>
+                                  <div style={{ marginBottom: '0.25rem' }}>
+                                    <strong>Actual:</strong> <code style={{ 
+                                      color: result.passed ? '#28a745' : '#dc3545' 
+                                    }}>
+                                      {result.actual_output || '(no output)'}
+                                    </code>
+                                  </div>
+                                  {result.execution_time_ms && (
+                                    <div style={{ marginTop: '0.25rem', fontSize: '0.8rem', color: '#6c757d' }}>
+                                      ⏱️ Execution time: {result.execution_time_ms}ms
+                                    </div>
+                                  )}
+                                  {result.error && (
+                                    <div style={{
+                                      marginTop: '0.5rem',
+                                      padding: '0.5rem',
+                                      backgroundColor: '#f8d7da',
+                                      color: '#721c24',
+                                      borderRadius: '4px',
+                                      fontSize: '0.8rem'
+                                    }}>
+                                      <strong>Error:</strong> {result.error}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -12,7 +12,8 @@ from presentation.controllers import (
     submissions_controller,
     users_controller,
     courses_controller,
-    exams_controller
+    exams_controller,
+    ai_assistant_controller
 )
 from infrastructure.persistence.database import engine
 from infrastructure.persistence.models import Base
@@ -55,6 +56,7 @@ app.include_router(submissions_controller.router)
 app.include_router(users_controller.router)
 app.include_router(courses_controller.router)
 app.include_router(exams_controller.router)
+app.include_router(ai_assistant_controller.router)
 
 
 @app.get("/", tags=["root"])

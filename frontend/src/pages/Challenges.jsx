@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { challengesAPI } from '../services/api';
 import { AlertCircle, Loader, GraduationCap, Code2 } from 'lucide-react';
+import AIAssistant from '../components/AIAssistant';
 import './Challenges.css';
 
 const Challenges = () => {
@@ -11,6 +12,56 @@ const Challenges = () => {
   const [challenges, setChallenges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [newChallenge, setNewChallenge] = useState({
+    title: '',
+    description: '',
+    difficulty: 'Easy',
+    tags: [],
+    time_limit: 1500,
+    memory_limit: 256,
+    language: 'PYTHON'
+  });
+
+  const isProfessorOrAdmin = user && (user.role === 'PROFESSOR' || user.role === 'ADMIN');
+
+  const handleAISuggestion = (suggestion) => {
+    console.log('AI Suggestion received:', suggestion);
+    
+    // Show summary to user
+    const summary = `
+🤖 AI Challenge Generated!
+
+Title: ${suggestion.title}
+Difficulty: ${suggestion.difficulty}
+Tags: ${suggestion.tags?.join(', ')}
+Time Limit: ${suggestion.limits?.timeLimitMs}ms
+Memory Limit: ${suggestion.limits?.memoryLimitMb}MB
+
+Test Cases: ${suggestion.testCases?.length || 0}
+Examples: ${suggestion.examples?.length || 0}
+
+The challenge details have been logged to the console.
+You can now:
+1. Open browser console (F12) to see full details
+2. Copy the data to create the challenge manually
+3. Or use the CourseDetail page to create it with the AI Assistant
+`;
+    
+    alert(summary);
+    
+    setNewChallenge({
+      title: suggestion.title,
+      description: suggestion.description,
+      difficulty: suggestion.difficulty,
+      tags: suggestion.tags || [],
+      time_limit: suggestion.limits?.timeLimitMs || 1500,
+      memory_limit: suggestion.limits?.memoryLimitMb || 256,
+      language: suggestion.language || 'PYTHON'
+    });
+    
+    // Store in sessionStorage so it can be used elsewhere
+    sessionStorage.setItem('aiGeneratedChallenge', JSON.stringify(suggestion));
+  };
 
   useEffect(() => {
     if (!user) {
@@ -56,6 +107,14 @@ const Challenges = () => {
         <h1>Challenges</h1>
         <p className="challenges-subtitle">Explore and solve programming challenges</p>
       </div>
+
+      {/* AI Assistant - only visible for professors/admins */}
+      {isProfessorOrAdmin && (
+        <AIAssistant 
+          onApplySuggestion={handleAISuggestion}
+          currentChallenge={null}
+        />
+      )}
 
       {loading ? (
         <div className="loading">
