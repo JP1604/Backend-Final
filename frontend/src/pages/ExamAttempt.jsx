@@ -141,9 +141,16 @@ const ExamAttempt = () => {
       return;
     }
 
+    // Check if this challenge already has an accepted submission
+    const existingSubmission = submissions[selectedChallenge.id];
+    if (existingSubmission && existingSubmission.status === 'ACCEPTED') {
+      setError('This challenge has already been completed. You cannot submit again.');
+      return;
+    }
+
     try {
       setSubmitting(true);
-      const response = await submissionsAPI.submit(selectedChallenge.id, code);
+      const response = await submissionsAPI.submit(selectedChallenge.id, code, attemptId);
       
       setSuccess('Code submitted successfully! Processing...');
       
@@ -174,6 +181,10 @@ const ExamAttempt = () => {
             if (latest.status !== 'QUEUED' && latest.status !== 'RUNNING') {
               clearInterval(pollInterval);
               setSuccess('Submission processed!');
+              // If accepted, disable editing this challenge
+              if (latest.status === 'ACCEPTED') {
+                setCode(''); // Clear code to prevent further edits
+              }
             }
           }
         } catch (err) {
@@ -200,17 +211,17 @@ const ExamAttempt = () => {
 
     try {
       setSubmitting(true);
-      await examsAPI.submitAttempt(attemptId);
-      setSuccess('Exam submitted successfully!');
+      setError('');
+      const response = await examsAPI.submitAttempt(attemptId);
+      setSuccess(`Exam submitted successfully! Score: ${response.data?.score || 0}%`);
       
-      // Redirect to exam results or exams page after a delay
+      // Redirect to exams page after a short delay
       setTimeout(() => {
         navigate('/exams');
-      }, 2000);
+      }, 1500);
     } catch (err) {
       console.error('Error submitting exam:', err);
       setError(err.response?.data?.detail || 'Failed to submit exam');
-    } finally {
       setSubmitting(false);
     }
   };
@@ -301,7 +312,18 @@ const ExamAttempt = () => {
                 <div
                   key={challenge.challenge_id}
                   className={`challenge-item ${selectedChallenge?.id === challenge.challenge_id ? 'active' : ''}`}
-                  onClick={() => handleChallengeSelect(challenge.challenge_id)}
+                  onClick={() => {
+                    // Don't allow selecting a challenge that's already been accepted
+                    const status = getSubmissionStatus(challenge.challenge_id);
+                    if (status && status.text === 'Accepted') {
+                      return; // Don't allow selection
+                    }
+                    handleChallengeSelect(challenge.challenge_id);
+                  }}
+                  style={{ 
+                    opacity: (getSubmissionStatus(challenge.challenge_id)?.text === 'Accepted') ? 0.6 : 1,
+                    cursor: (getSubmissionStatus(challenge.challenge_id)?.text === 'Accepted') ? 'not-allowed' : 'pointer'
+                  }}
                 >
                   <div className="challenge-item-header">
                     <FileText size={18} />
@@ -356,7 +378,7 @@ const ExamAttempt = () => {
                     onChange={(e) => setCode(e.target.value)}
                     className="code-textarea"
                     placeholder="Paste your code here..."
-                    disabled={submitting}
+                    disabled={submitting || (submissions[selectedChallenge.id]?.status === 'ACCEPTED')}
                     rows={20}
                   />
                 </div>
@@ -378,7 +400,7 @@ const ExamAttempt = () => {
                 <button
                   type="submit"
                   className="btn-submit"
-                  disabled={submitting}
+                  disabled={submitting || (submissions[selectedChallenge.id]?.status === 'ACCEPTED')}
                 >
                   {submitting ? (
                     <>

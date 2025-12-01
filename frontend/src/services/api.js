@@ -116,8 +116,12 @@ export const usersAPI = {
 
 // Submissions API
 export const submissionsAPI = {
-  submit: (challengeId, code) => 
-    api.post('/submissions/submit', { challenge_id: challengeId, code }),
+  submit: (challengeId, code, examAttemptId = null) => 
+    api.post('/submissions/submit', { 
+      challenge_id: challengeId, 
+      code,
+      exam_attempt_id: examAttemptId
+    }),
   getById: (id) => api.get(`/submissions/${id}`),
   getByChallenge: (challengeId) => api.get(`/submissions/challenge/${challengeId}`),
   getMy: () => api.get('/submissions/my'),

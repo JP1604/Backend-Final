@@ -109,7 +109,8 @@ async def submit_solution(
             user_id=current_user["id"],
             user_role=UserRole(current_user["role"]),
             challenge_id=submission_request.challenge_id,
-            code=submission_request.code
+            code=submission_request.code,
+            exam_attempt_id=submission_request.exam_attempt_id
         )
         
         logger.info(

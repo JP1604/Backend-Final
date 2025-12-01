@@ -94,3 +94,4 @@ class UnassignChallengeFromExamUseCase:
         """Check if user role can manage exams"""
         return user_role in [UserRole.PROFESSOR, UserRole.ADMIN]
 
+

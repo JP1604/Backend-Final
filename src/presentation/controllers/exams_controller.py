@@ -116,7 +116,8 @@ async def create_exam(
             passing_score=exam.passing_score,
             created_at=exam.created_at,
             updated_at=exam.updated_at,
-            created_by=exam.created_by
+            created_by=exam.created_by,
+            is_active=exam.is_active()
         )
         
     except ValueError as e:
@@ -175,7 +176,8 @@ async def list_exams(
                 passing_score=exam.passing_score,
                 created_at=exam.created_at,
                 updated_at=exam.updated_at,
-                created_by=exam.created_by
+                created_by=exam.created_by,
+                is_active=exam.is_active()
             ))
         
         logger.info(f"[EXAMS_LISTED] Returned {len(responses)} exams for user {current_user['id']}")
@@ -213,6 +215,36 @@ async def start_exam_attempt(exam_id: str, db: Session = Depends(get_db), curren
     except Exception as e:
         logger.error(f"[START_ATTEMPT_ERROR] Failed to start exam attempt {exam_id}: {str(e)}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to start exam attempt")
+
+
+@router.post("/attempts/{attempt_id}/submit")
+async def submit_exam_attempt(attempt_id: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
+    """Submit an exam attempt and calculate the final score."""
+    logger.info(f"[SUBMIT_EXAM_ATTEMPT] User {current_user['email']} submitting attempt {attempt_id}")
+    
+    try:
+        from infrastructure.repositories.submission_repository_impl import SubmissionRepositoryImpl
+        
+        exam_repo = _build_exam_repository(db)
+        submission_repo = SubmissionRepositoryImpl(db)
+        
+        use_case = SubmitExamAttemptUseCase(exam_repo, submission_repo, db)
+        finalized = await use_case.execute(attempt_id)
+        
+        logger.info(f"[ATTEMPT_SUBMITTED] Attempt {attempt_id} finalized with score {finalized['score']}%")
+        return {
+            "attempt_id": attempt_id,
+            "score": finalized['score'],
+            "passed": finalized['passed'],
+            "submitted_at": finalized.get('submitted_at')
+        }
+        
+    except ValueError as e:
+        logger.warning(f"[SUBMIT_ATTEMPT_ERROR] Validation error: {str(e)}")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(f"[SUBMIT_ATTEMPT_ERROR] Failed to submit exam attempt {attempt_id}: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to submit exam attempt")
 
 
 @router.get(
@@ -263,12 +295,26 @@ async def get_exam_attempts(
         # Get attempts
         attempts_data = await exam_repo.get_attempts_by_exam_id(exam_id)
         
+        # Get user repository to fetch user names
+        from infrastructure.repositories.user_repository_impl import UserRepositoryImpl
+        user_repo = UserRepositoryImpl(db)
+        
         attempts = []
         for attempt_data in attempts_data:
+            # Fetch user information
+            user = await user_repo.find_by_id(attempt_data["user_id"])
+            user_name = None
+            user_email = None
+            if user:
+                user_name = f"{user.first_name} {user.last_name}"
+                user_email = user.email
+            
             attempts.append(ExamAttemptResponse(
                 id=attempt_data["id"],
                 exam_id=exam_id,
                 user_id=attempt_data["user_id"],
+                user_name=user_name,
+                user_email=user_email,
                 score=attempt_data["score"],
                 passed=attempt_data["passed"],
                 started_at=attempt_data["started_at"],
@@ -337,15 +383,29 @@ async def get_exam_results(
         # Get attempts
         attempts_data = await exam_repo.get_attempts_by_exam_id(exam_id)
         
+        # Get user repository to fetch user names
+        from infrastructure.repositories.user_repository_impl import UserRepositoryImpl
+        user_repo = UserRepositoryImpl(db)
+        
         attempts = []
         total_score = 0
         passed_count = 0
         
         for attempt_data in attempts_data:
+            # Fetch user information
+            user = await user_repo.find_by_id(attempt_data["user_id"])
+            user_name = None
+            user_email = None
+            if user:
+                user_name = f"{user.first_name} {user.last_name}"
+                user_email = user.email
+            
             attempts.append(ExamAttemptResponse(
                 id=attempt_data["id"],
                 exam_id=exam_id,
                 user_id=attempt_data["user_id"],
+                user_name=user_name,
+                user_email=user_email,
                 score=attempt_data["score"],
                 passed=attempt_data["passed"],
                 started_at=attempt_data["started_at"],
@@ -621,7 +681,8 @@ async def get_exam(
             passing_score=exam.passing_score,
             created_at=exam.created_at,
             updated_at=exam.updated_at,
-            created_by=exam.created_by
+            created_by=exam.created_by,
+            is_active=exam.is_active()
         )
         
     except HTTPException:
@@ -686,7 +747,8 @@ async def update_exam(
             passing_score=exam.passing_score,
             created_at=exam.created_at,
             updated_at=exam.updated_at,
-            created_by=exam.created_by
+            created_by=exam.created_by,
+            is_active=exam.is_active()
         )
         
     except ValueError as e:

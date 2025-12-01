@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from domain.entities.submission import Submission, SubmissionStatus, ProgrammingLanguage
 from domain.entities.user import UserRole
 from domain.repositories.challenge_repository import ChallengeRepository
@@ -31,7 +31,8 @@ class SubmitSolutionUseCase:
         user_id: str,
         user_role: UserRole,
         challenge_id: str,
-        code: str
+        code: str,
+        exam_attempt_id: Optional[str] = None
     ) -> Submission:
         # Only students can submit solutions
         if user_role != UserRole.STUDENT:
@@ -76,7 +77,8 @@ class SubmitSolutionUseCase:
             time_ms_total=0,
             cases=[],
             created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow()
+            updated_at=datetime.utcnow(),
+            exam_attempt_id=exam_attempt_id
         )
 
         # Guardar submission

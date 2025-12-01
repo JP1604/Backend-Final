@@ -388,13 +388,19 @@ const Exams = () => {
                 )}
               </div>
               <div className="exam-actions">
-                {user.role === 'STUDENT' && (exam.status === 'active' || exam.status === 'ACTIVE') && (
+                {user.role === 'STUDENT' && exam.is_active && (
                   <button 
                     className="btn-primary"
                     onClick={() => handleStartExam(exam.id)}
                   >
                     Start Exam
                   </button>
+                )}
+                {user.role === 'STUDENT' && (exam.status === 'active' || exam.status === 'ACTIVE') && exam.is_active === false && (
+                  <div className="error-message" style={{ marginTop: '0.5rem', padding: '0.75rem', fontSize: '0.875rem' }}>
+                    <AlertCircle size={16} />
+                    <span>Exam is not currently active. Check the exam dates.</span>
+                  </div>
                 )}
                 {(user.role === 'PROFESSOR' || user.role === 'ADMIN') && (
                   <>

@@ -101,7 +101,7 @@ const ExamResults = () => {
                 <table>
                   <thead>
                     <tr>
-                      <th>Student ID</th>
+                      <th>Student</th>
                       <th>Score</th>
                       <th>Passed</th>
                       <th>Started At</th>
@@ -111,7 +111,14 @@ const ExamResults = () => {
                   <tbody>
                     {results.attempts?.map((attempt) => (
                       <tr key={attempt.id}>
-                        <td>{attempt.user_id}</td>
+                        <td>
+                          {attempt.user_name || attempt.user_email || attempt.user_id}
+                          {attempt.user_email && attempt.user_name && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+                              {attempt.user_email}
+                            </div>
+                          )}
+                        </td>
                         <td>
                           <span className={`score-badge ${attempt.score >= 70 ? 'pass' : 'fail'}`}>
                             {attempt.score}%
@@ -153,4 +160,5 @@ const ExamResults = () => {
 };
 
 export default ExamResults;
+
 

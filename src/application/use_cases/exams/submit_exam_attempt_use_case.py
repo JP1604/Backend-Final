@@ -5,8 +5,9 @@ student during the attempt window (started_at .. now). Each exam challenge
 has assigned points stored in `exam_challenges`.
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
+from uuid import UUID
 
 from infrastructure.persistence.models import exam_challenges
 
@@ -47,19 +48,26 @@ class SubmitExamAttemptUseCase:
 
         total_points = 0
         earned_points = 0
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
+        attempt_id_uuid = UUID(attempt_id)
 
         for ch_id, points in challenge_points:
             total_points += points
-            # Find best submission by this user for this challenge between started_at and now
-            subs = await self.submission_repository.find_by_user_and_challenge(attempt['user_id'], ch_id)
-            # Filter by timestamps within attempt window
+            # Find best submission by this user for this challenge linked to this attempt
+            # First try to get submissions directly linked to this attempt
+            all_subs = await self.submission_repository.find_by_user_and_challenge(attempt['user_id'], ch_id)
+            # Filter by exam_attempt_id and timestamps within attempt window
             subs_in_attempt = [
-                s for s in subs 
-                if getattr(s, 'created_at', None) 
+                s for s in all_subs 
+                if getattr(s, 'exam_attempt_id', None) == attempt_id
+                and getattr(s, 'created_at', None) 
                 and s.created_at >= started_at 
                 and s.created_at <= now
             ]
+            
+            # If no submissions found linked to attempt, log warning
+            if not subs_in_attempt:
+                logger.warning(f"[NO_SUBMISSIONS] No submissions found for challenge {ch_id} in attempt {attempt_id}")
             
             best = None
             for s in subs_in_attempt:

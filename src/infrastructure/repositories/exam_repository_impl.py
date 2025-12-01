@@ -92,13 +92,13 @@ class ExamRepositoryImpl:
 
     async def finalize_attempt(self, attempt_id: str, score: int, passed: bool):
         """Finalize an exam attempt: set submitted_at, score and passed flag."""
-        from datetime import datetime
+        from datetime import datetime, timezone
         try:
             attempt_uuid = UUID(attempt_id) if isinstance(attempt_id, str) else attempt_id
             r = self.db.query(ExamAttemptModel).filter(ExamAttemptModel.id == attempt_uuid).first()
             if not r:
                 raise ValueError(f"Attempt {attempt_id} not found")
-            r.submitted_at = datetime.utcnow()
+            r.submitted_at = datetime.now(timezone.utc)
             r.score = score
             r.passed = passed
             r.is_active = False

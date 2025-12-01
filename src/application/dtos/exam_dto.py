@@ -47,6 +47,7 @@ class ExamResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     created_by: str
+    is_active: Optional[bool] = None  # Calculated field: true if exam is currently active (status=ACTIVE and within time window)
     
     class Config:
         from_attributes = True
@@ -57,6 +58,8 @@ class ExamAttemptResponse(BaseModel):
     id: str
     exam_id: str
     user_id: str
+    user_name: Optional[str] = None  # Full name of the student
+    user_email: Optional[str] = None  # Email of the student
     score: int
     passed: bool
     started_at: datetime
